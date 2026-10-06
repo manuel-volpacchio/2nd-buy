@@ -1,0 +1,2357 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>2nd Rebuy — Dashboard KNN</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+
+    :root {
+      --bg:          #f5f1fb;
+      --panel:       #ffffff;
+      --panel-soft:  #f9f8fc;
+      --ink:         #16203f;
+      --title:       #0c1028;
+      --muted:       #8c92a3;
+      --light:       #aaa;
+      --line:        #e8e8e8;
+      --blue:        #1A3FA0;
+      --blue-2:      #378ADD;
+      --blue-soft:   #EAF2FF;
+      --violet:      #8B5CF6;
+      --violet-soft: #F2E6FB;
+      --green:       #087456;
+      --green-soft:  #E8F6F0;
+      --red:         #E24B4A;
+      --red-soft:    #FCEBEB;
+      --orange:      #CF3B24;
+      --orange-soft: #FDECEA;
+      --teal:        #0891b2;
+      --teal-soft:   #e0f2fe;
+      --shadow:      0 1px 5px rgba(30,34,60,.06);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 58px;
+      padding: 0 24px;
+      background: #ffffff;
+      border-bottom: 1px solid var(--line);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-icon {
+      width: 34px; height: 34px;
+      background: var(--blue);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; color: #fff;
+    }
+    .brand-title { font-size: 17px; font-weight: 700; color: var(--title); }
+    .brand-sub   { font-size: 11px; color: var(--muted); font-weight: 500; }
+    .topbar-meta {
+      display: flex; align-items: center; gap: 18px;
+      font-size: 12px; color: var(--muted);
+    }
+    .topbar-meta strong { color: var(--ink); font-weight: 700; }
+    .badge {
+      display: inline-flex; align-items: center;
+      background: var(--blue-soft); color: var(--blue);
+      border-radius: 8px; padding: 4px 10px;
+      font-size: 11px; font-weight: 700;
+    }
+
+    /* ── MAIN LAYOUT ── */
+    .main { max-width: 1600px; margin: 0 auto; padding: 18px 20px 40px; }
+
+    /* ── FILTER BAR ── */
+    .filter-bar-wrap {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px 18px;
+      box-shadow: var(--shadow);
+      margin-bottom: 18px;
+    }
+    .filter-bar-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .filter-bar-title {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .07em; color: var(--muted);
+    }
+    .filter-bar {
+      display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: flex-end;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 4px; min-width: 130px; }
+    .filter-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--light); }
+    .filter-select {
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: var(--panel-soft);
+      color: var(--ink);
+      padding: 7px 10px;
+      font: inherit; font-size: 12px; font-weight: 600;
+      outline: none; cursor: pointer;
+      min-width: 130px;
+    }
+    .filter-select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(26,63,160,.08); }
+    .btn-reset {
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: var(--panel-soft);
+      color: var(--muted);
+      padding: 7px 14px;
+      font: inherit; font-size: 12px; font-weight: 600;
+      cursor: pointer; white-space: nowrap; align-self: flex-end;
+    }
+    .btn-reset:hover { border-color: var(--red); color: var(--red); }
+
+    /* ── ACTIVE FILTERS ── */
+    .active-filters { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .active-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: var(--blue-soft); color: var(--blue);
+      border-radius: 20px; padding: 3px 10px;
+      font-size: 11px; font-weight: 600; cursor: pointer;
+    }
+    .active-chip:hover { background: #d5e7ff; }
+
+    /* ── KPI CARDS ── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    @media (max-width:1100px) { .kpi-grid { grid-template-columns: repeat(3,1fr); } }
+    .kpi-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px 20px 16px;
+      box-shadow: var(--shadow);
+    }
+    .kpi-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .07em; color: var(--muted); margin-bottom: 8px;
+    }
+    .kpi-value { font-size: 28px; font-weight: 800; color: var(--title); line-height: 1; }
+    .kpi-sub   { font-size: 11px; color: var(--muted); margin-top: 4px; }
+    .kpi-icon  { font-size: 22px; float: right; margin-top: -2px; }
+    .kpi-card.blue  { border-left: 4px solid var(--blue); }
+    .kpi-card.green { border-left: 4px solid var(--green); }
+    .kpi-card.violet{ border-left: 4px solid var(--violet); }
+    .kpi-card.teal  { border-left: 4px solid var(--teal); }
+    .kpi-card.orange{ border-left: 4px solid var(--orange); }
+
+    /* ── CHART GRID ── */
+    .chart-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .chart-grid-3 {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    @media (max-width:1000px) {
+      .chart-grid-2, .chart-grid-3 { grid-template-columns: 1fr; }
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px 20px;
+      box-shadow: var(--shadow);
+    }
+    .panel-title {
+      font-size: 13px; font-weight: 700; color: var(--title);
+      margin: 0 0 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .panel-title .dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    }
+    .chart-wrap { position: relative; }
+    canvas { max-height: 260px; }
+    canvas.tall { max-height: 320px; }
+
+    /* ── TABLE ── */
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    thead tr {
+      background: var(--panel-soft);
+      border-bottom: 2px solid var(--line);
+    }
+    th {
+      padding: 9px 12px;
+      text-align: left;
+      font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .06em;
+      color: var(--muted);
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+    }
+    th:hover { color: var(--blue); }
+    th.sort-asc::after  { content: " ▲"; font-size: 8px; }
+    th.sort-desc::after { content: " ▼"; font-size: 8px; }
+    td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--line);
+      color: var(--ink);
+    }
+    tr:hover td { background: var(--panel-soft); }
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 10px; font-weight: 700;
+    }
+    .tag-blue   { background: var(--blue-soft); color: var(--blue); }
+    .tag-green  { background: var(--green-soft); color: var(--green); }
+    .tag-violet { background: var(--violet-soft); color: var(--violet); }
+    .tag-orange { background: var(--orange-soft); color: var(--orange); }
+    .tag-teal   { background: var(--teal-soft); color: var(--teal); }
+    .bar-inline {
+      display: flex; align-items: center; gap: 6px;
+    }
+    .bar-bg {
+      flex: 1; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden;
+    }
+    .bar-fill { height: 100%; border-radius: 3px; background: var(--blue-2); }
+
+    /* conf badge */
+    .conf-badge {
+      display: inline-block; min-width: 36px; text-align: center;
+      padding: 2px 6px; border-radius: 6px; font-size: 11px; font-weight: 700;
+    }
+    .conf-high   { background: var(--green-soft);  color: var(--green); }
+    .conf-mid    { background: var(--orange-soft);  color: var(--orange); }
+    .conf-low    { background: var(--red-soft);     color: var(--red); }
+
+    /* pagination */
+    .pagination {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 14px; justify-content: flex-end; flex-wrap: wrap;
+    }
+    .page-info { font-size: 12px; color: var(--muted); margin-right: auto; }
+    .page-btn {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-soft);
+      color: var(--ink);
+      font: inherit; font-size: 12px; font-weight: 600;
+      padding: 5px 12px; cursor: pointer;
+    }
+    .page-btn:hover { border-color: var(--blue); color: var(--blue); }
+    .page-btn.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+    .page-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+    /* loading */
+    #loading {
+      position: fixed; inset: 0; background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 999; flex-direction: column; gap: 14px;
+    }
+    .spinner {
+      width: 40px; height: 40px; border: 3px solid var(--line);
+      border-top-color: var(--blue); border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loading p { color: var(--muted); font-size: 14px; font-weight: 600; }
+
+    /* divider text */
+    .section-label {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--muted);
+      margin: 0 0 10px; padding-left: 2px;
+    }
+
+    /* ── TREE FILTER (destino / fecha) ── */
+    .filter-item { position: relative; }
+    .filter-trigger {
+      min-height: 32px;
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      padding: 7px 10px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: var(--panel-soft);
+      color: var(--ink);
+      font: inherit; font-size: 12px; font-weight: 600;
+      cursor: pointer; white-space: nowrap; min-width: 160px;
+    }
+    .filter-trigger:hover { border-color: var(--blue); }
+    .filter-trigger.open  { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(26,63,160,.08); }
+    .filter-trigger .chevron { color: var(--muted); font-size: 10px; transition: transform .15s; }
+    .filter-trigger.open .chevron { transform: rotate(180deg); }
+
+    .filter-panel {
+      display: none;
+      position: absolute; top: calc(100% + 6px); left: 0; z-index: 50;
+      min-width: 280px; max-width: 340px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(20,30,60,.16);
+      padding: 12px;
+    }
+    .filter-panel.open { display: block; }
+    .filter-panel-search input {
+      width: 100%; min-height: 30px; border: 1px solid var(--line);
+      border-radius: 8px; padding: 5px 8px; font: inherit; font-size: 12px; outline: none;
+      margin-bottom: 8px;
+    }
+    .filter-panel-search input:focus { border-color: var(--blue); }
+    .filter-select-all-row {
+      display: flex; align-items: center; gap: 6px;
+      margin: 0 0 8px; padding: 0 2px 8px;
+      border-bottom: 1px solid var(--line);
+      font-weight: 700; font-size: 12px; color: var(--title);
+      cursor: pointer;
+    }
+    .filter-select-all-row input { width: 14px; height: 14px; accent-color: var(--violet); }
+    .filter-mini-btn {
+      min-height: 26px; border: 1px solid var(--line); border-radius: 7px;
+      background: var(--panel-soft); color: var(--ink); font: inherit; font-size: 11px;
+      font-weight: 600; cursor: pointer; padding: 2px 10px;
+    }
+    .filter-mini-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+    .period-tree, .check-list {
+      max-height: 280px; overflow: auto; padding-right: 2px;
+      display: grid; gap: 2px;
+    }
+    .period-node { border-left: 1px solid var(--line); margin-left: 7px; padding-left: 8px; }
+    .period-node.top-node { border-left: none; margin-left: 0; padding-left: 0; }
+    .tree-children { display: grid; gap: 2px; margin-top: 2px; }
+    .tree-children.collapsed { display: none; }
+    .period-row {
+      display: grid; grid-template-columns: 14px 15px minmax(0,1fr) auto;
+      align-items: center; gap: 5px; min-height: 22px;
+      font-size: 12px; color: var(--ink); cursor: pointer;
+    }
+    .period-row input { width: 13px; height: 13px; margin: 0; accent-color: var(--blue); }
+    .period-toggle { color: var(--muted); font-size: 10px; text-align: center; cursor: pointer; }
+    .period-count { color: var(--muted); font-size: 10.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .filter-panel-footer {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line);
+    }
+
+    /* ── INFO BANNER (explicacion no invasiva) ── */
+    .info-banner {
+      background: linear-gradient(135deg, var(--blue-soft), #fff 70%);
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--blue);
+      border-radius: 12px;
+      padding: 10px 16px;
+      margin: 12px 20px 0;
+      font-size: 12.5px;
+      color: var(--ink);
+    }
+    .info-banner-head {
+      display: flex; align-items: center; gap: 10px; cursor: pointer;
+    }
+    .info-banner-icon { font-size: 16px; flex-shrink: 0; }
+    .info-banner-title { font-weight: 700; color: var(--title); flex: 1; }
+    .info-banner-chevron { color: var(--muted); font-size: 11px; transition: transform .15s; }
+    .info-banner.open .info-banner-chevron { transform: rotate(180deg); }
+    .info-banner-body {
+      display: none; margin-top: 10px; padding-top: 10px;
+      border-top: 1px solid rgba(26,63,160,.15);
+      line-height: 1.55; color: var(--ink);
+    }
+    .info-banner.open .info-banner-body { display: block; }
+    .info-banner-body b { color: var(--title); }
+    .info-banner-body .step {
+      display: flex; gap: 8px; margin: 6px 0; align-items: flex-start;
+    }
+    .info-banner-body .step-num {
+      background: var(--blue); color: #fff; font-weight: 700; font-size: 10.5px;
+      width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center;
+      justify-content: center; flex-shrink: 0; margin-top: 1px;
+    }
+    .info-banner-close {
+      background: none; border: none; color: var(--muted); font-size: 12px;
+      cursor: pointer; padding: 2px 6px; flex-shrink: 0;
+    }
+    .info-banner-close:hover { color: var(--red); }
+
+    /* ── AUDIENCIA SQL ── */
+    .sql-panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding: 18px 20px;
+      margin-bottom: 14px;
+      border-left: 4px solid var(--violet);
+    }
+    .sql-head {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .sql-title {
+      font-size: 13px; font-weight: 700; color: var(--title);
+      display: flex; align-items: center; gap: 8px; margin: 0;
+    }
+    .sql-sub { font-size: 11.5px; color: var(--muted); margin: 2px 0 0; }
+    .sql-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+    .sql-toggle {
+      display: flex; border: 1px solid var(--line); border-radius: 9px; overflow: hidden;
+    }
+    .sql-toggle button {
+      border: none; background: var(--panel-soft); color: var(--muted);
+      font: inherit; font-size: 11.5px; font-weight: 600; padding: 6px 12px; cursor: pointer;
+    }
+    .sql-toggle button.active { background: var(--violet); color: #fff; }
+    .btn-copy {
+      border: 1px solid var(--line); border-radius: 9px; background: var(--violet-soft);
+      color: var(--violet); font: inherit; font-size: 12px; font-weight: 700;
+      padding: 7px 14px; cursor: pointer; white-space: nowrap;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .btn-copy:hover { background: var(--violet); color: #fff; }
+    .btn-copy.copied { background: var(--green); color: #fff; }
+    .sql-warning {
+      background: var(--orange-soft); color: var(--orange);
+      border-radius: 9px; padding: 8px 12px; font-size: 11.5px; margin-bottom: 10px;
+      display: flex; align-items: flex-start; gap: 8px;
+    }
+    .sql-code-wrap {
+      background: #0f1424; border-radius: 12px; padding: 16px 18px;
+      overflow-x: auto; position: relative;
+    }
+    .sql-code {
+      font-family: 'SF Mono', Consolas, 'Courier New', monospace;
+      font-size: 12.5px; line-height: 1.7; color: #d6deeb;
+      white-space: pre; margin: 0;
+    }
+    .sql-kw    { color: #c792ea; font-weight: 700; }
+    .sql-str   { color: #ecc48d; }
+    .sql-num   { color: #f78c6c; }
+    .sql-com   { color: #637777; font-style: italic; }
+    .sql-col   { color: #82aaff; }
+    .sql-foot {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 10px; font-size: 11px; color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spinner"></div>
+  <p id="loading-msg">Cargando datos (~190 MB)… puede tardar 20-40 segundos</p>
+</div>
+
+<div id="app" style="display:none">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-icon">✈</div>
+    <div>
+      <div class="brand-title">2nd Rebuy — Recomendaciones KNN</div>
+      <div class="brand-sub">Modelo de segundo viaje · Grupo A</div>
+    </div>
+  </div>
+  <div class="topbar-meta">
+    <span>Generado <strong>29 Sep 2026</strong></span>
+    <span class="badge" id="badge-total">— usuarios</span>
+  </div>
+</div>
+
+<!-- INFO BANNER -->
+<div class="info-banner" id="infoBanner">
+  <div class="info-banner-head" onclick="toggleInfoBanner()">
+    <span class="info-banner-icon">💡</span>
+    <span class="info-banner-title">¿Para qué sirve este tablero? — recomendaciones de 2do viaje generadas con KNN, pensado para armar audiencias de comunicación.</span>
+    <span class="info-banner-chevron">▾</span>
+    <button class="info-banner-close" onclick="event.stopPropagation(); dismissInfoBanner()" title="No volver a mostrar">✕</button>
+  </div>
+  <div class="info-banner-body">
+    <p style="margin:0 0 8px"><b>Objetivo:</b> cada usuario de este tablero tiene hoy <b>1 solo viaje</b> comprado. El modelo le recomienda un <b>2do viaje</b> (qué producto, a qué destino y cuándo conviene comunicarlo), para que puedas armar audiencias y campañas segmentadas.</p>
+    <p style="margin:0 0 6px"><b>¿Cómo funciona KNN (K-Nearest Neighbors)?</b> En criollo: busca "parecidos".</p>
+    <div class="step"><span class="step-num">1</span><span>Tomamos a todos los usuarios que <b>ya hicieron 2 viajes</b> (sabemos qué compraron la segunda vez).</span></div>
+    <div class="step"><span class="step-num">2</span><span>Para cada usuario con 1 solo viaje, buscamos a los <b>5 usuarios más parecidos</b> entre los que ya tienen 2 viajes (mismo país, edad, tipo de viaje, destino, gasto, etc.).</span></div>
+    <div class="step"><span class="step-num">3</span><span>Miramos qué compraron esos 5 "vecinos" en su 2do viaje y usamos eso como <b>recomendación</b> (producto, destino, tipo de destino y cuándo lo compraron).</span></div>
+    <div class="step"><span class="step-num">4</span><span>La <b>confianza</b> indica qué tan de acuerdo están esos 5 vecinos entre sí — si los 5 recomiendan lo mismo, confianza alta; si están repartidos, confianza baja.</span></div>
+    <p style="margin:10px 0 0"><b>Cómo usarlo:</b> combiná los filtros (país, producto, destino, confianza, fecha a comunicar) para armar el segmento que te interese, y usá la tabla de detalle para exportar o comunicar a esos usuarios en el momento indicado.</p>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- FILTROS -->
+  <div class="filter-bar-wrap">
+    <div class="filter-bar-header">
+      <span class="filter-bar-title">Filtros</span>
+      <button class="btn-reset" onclick="resetFilters()">✕ Limpiar filtros</button>
+    </div>
+    <div class="filter-bar" id="filterBar">
+      <!-- los filtros multi-select (pais, tipo viaje, income, edad, producto, confianza)
+           se generan dinamicamente via JS -- ver buildMultiFilterHTML() -->
+
+      <!-- ORIGEN 1ER VIAJE (arbol tipo > origen) -->
+      <div class="filter-group filter-item">
+        <span class="filter-label">Origen 1er viaje</span>
+        <button class="filter-trigger" id="origenTrigger" onclick="togglePanel('origenPanel','origenTrigger')">
+          <span class="filter-trigger-text" id="origenTriggerText">Todos</span>
+          <span class="chevron">▾</span>
+        </button>
+        <div class="filter-panel" id="origenPanel">
+          <div class="filter-panel-search">
+            <input type="search" id="origenSearch" placeholder="Buscar origen…" oninput="renderOrigenTree()">
+          </div>
+          <label class="filter-select-all-row">
+            <input type="checkbox" id="origenSelectAll" onchange="origenToggleAll(this.checked)">
+            <span>Seleccionar todos</span>
+          </label>
+          <div class="period-tree" id="origenTree"></div>
+          <div class="filter-panel-footer">
+            <span class="page-info" id="origenSummary" style="margin-right:0"></span>
+            <button class="filter-mini-btn" onclick="closePanel('origenPanel','origenTrigger')">Cerrar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- DESTINO (arbol tipo > destino) -->
+      <div class="filter-group filter-item">
+        <span class="filter-label">Destino recomendado</span>
+        <button class="filter-trigger" id="destTrigger" onclick="togglePanel('destPanel','destTrigger')">
+          <span class="filter-trigger-text" id="destTriggerText">Todos</span>
+          <span class="chevron">▾</span>
+        </button>
+        <div class="filter-panel" id="destPanel">
+          <div class="filter-panel-search">
+            <input type="search" id="destSearch" placeholder="Buscar destino…" oninput="renderDestTree()">
+          </div>
+          <label class="filter-select-all-row">
+            <input type="checkbox" id="destSelectAll" onchange="destToggleAll(this.checked)">
+            <span>Seleccionar todos</span>
+          </label>
+          <div class="period-tree" id="destTree"></div>
+          <div class="filter-panel-footer">
+            <span class="page-info" id="destSummary" style="margin-right:0"></span>
+            <button class="filter-mini-btn" onclick="closePanel('destPanel','destTrigger')">Cerrar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- FECHA A COMUNICAR (arbol año > mes > semana > dia) -->
+      <div class="filter-group filter-item">
+        <span class="filter-label">Fecha a comunicar</span>
+        <button class="filter-trigger" id="fechaTrigger" onclick="togglePanel('fechaPanel','fechaTrigger')">
+          <span class="filter-trigger-text" id="fechaTriggerText">Todas</span>
+          <span class="chevron">▾</span>
+        </button>
+        <div class="filter-panel" id="fechaPanel">
+          <label class="filter-select-all-row">
+            <input type="checkbox" id="fechaSelectAll" onchange="fechaToggleAll(this.checked)">
+            <span>Seleccionar todas</span>
+          </label>
+          <div class="period-tree" id="fechaTree"></div>
+          <div class="filter-panel-footer" style="flex-direction:column;align-items:stretch;gap:4px">
+            <span class="page-info" id="fechaSummary" style="margin-right:0"></span>
+            <span style="font-size:10.5px;color:var(--muted);line-height:1.3">Al activar este filtro se excluyen ~9.763 usuarios sin fecha de comunicación definida.</span>
+            <button class="filter-mini-btn" style="align-self:flex-end" onclick="closePanel('fechaPanel','fechaTrigger')">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="active-filters" id="active-filters"></div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi-card blue">
+      <div class="kpi-label">Usuarios filtrados <span class="kpi-icon">👥</span></div>
+      <div class="kpi-value" id="kpi-total">—</div>
+      <div class="kpi-sub" id="kpi-total-pct">del total</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">Confianza promedio <span class="kpi-icon">🎯</span></div>
+      <div class="kpi-value" id="kpi-conf">—</div>
+      <div class="kpi-sub" id="kpi-conf-alta">% alta confianza (≥0.8)</div>
+    </div>
+    <div class="kpi-card violet">
+      <div class="kpi-label">Días anticipación compra <span class="kpi-icon">📅</span></div>
+      <div class="kpi-value" id="kpi-antic">—</div>
+      <div class="kpi-sub">mediana días antes del viaje</div>
+    </div>
+    <div class="kpi-card teal">
+      <div class="kpi-label">Días checkout → compra 2 <span class="kpi-icon">⏱</span></div>
+      <div class="kpi-value" id="kpi-timing">—</div>
+      <div class="kpi-sub">mediana días post-checkout</div>
+    </div>
+    <div class="kpi-card orange">
+      <div class="kpi-label">Gasto promedio trip 1 <span class="kpi-icon">💵</span></div>
+      <div class="kpi-value" id="kpi-gb">—</div>
+      <div class="kpi-sub">gross bookings USD</div>
+    </div>
+  </div>
+
+  <!-- AUDIENCIA SQL -->
+  <div class="sql-panel">
+    <div class="sql-head">
+      <div>
+        <p class="sql-title">🗂️ Descargar audiencia — query SQL (Trino)</p>
+        <p class="sql-sub">Se genera automáticamente según los filtros activos. Corré esta query directo sobre <code>raw.mktbi_potentials_rebuyers</code>.</p>
+      </div>
+      <div class="sql-actions">
+        <div class="sql-toggle">
+          <button id="sqlColsAllBtn" class="active" onclick="setSqlCols('all')">Todas las columnas</button>
+          <button id="sqlColsKeyBtn" onclick="setSqlCols('key')">Columnas clave</button>
+        </div>
+        <button class="btn-copy" id="btnCopySql" onclick="copySqlToClipboard()">📋 Copiar SQL</button>
+      </div>
+    </div>
+    <div id="sqlWarning"></div>
+    <div class="sql-code-wrap">
+      <pre class="sql-code" id="sqlCode">-- Cargando…</pre>
+    </div>
+    <div class="sql-foot">
+      <span id="sqlAudienceSize">—</span>
+      <span>Dialecto: Trino SQL</span>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 1 -->
+  <p class="section-label">Distribución de recomendaciones</p>
+  <div class="chart-grid-2" style="margin-bottom:14px">
+    <div class="panel">
+      <p class="panel-title"><span class="dot" style="background:var(--blue)"></span>Usuarios por país</p>
+      <div class="chart-wrap"><canvas id="chart-pais" class="tall"></canvas></div>
+    </div>
+    <div class="panel">
+      <p class="panel-title"><span class="dot" style="background:var(--violet)"></span>Producto recomendado</p>
+      <div class="chart-wrap"><canvas id="chart-producto"></canvas></div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 2 -->
+  <div class="chart-grid-3">
+    <div class="panel">
+      <p class="panel-title"><span class="dot" style="background:var(--teal)"></span>Tipo de destino recomendado</p>
+      <div class="chart-wrap"><canvas id="chart-tipo-dest" class="tall"></canvas></div>
+    </div>
+    <div class="panel">
+      <p class="panel-title"><span class="dot" style="background:var(--green)"></span>Distribución confianza</p>
+      <div class="chart-wrap"><canvas id="chart-confianza"></canvas></div>
+    </div>
+    <div class="panel">
+      <p class="panel-title"><span class="dot" style="background:var(--orange)"></span>Timing comunicación</p>
+      <div class="chart-wrap"><canvas id="chart-timing"></canvas></div>
+    </div>
+  </div>
+
+  <!-- TOP DESTINOS TABLE -->
+  <p class="section-label">Top destinos recomendados</p>
+  <div class="panel" style="margin-bottom:14px">
+    <p class="panel-title" style="margin-bottom:14px">
+      <span class="dot" style="background:var(--blue-2)"></span>
+      Ranking de destinos recomendados
+      <span style="margin-left:auto;font-size:11px;font-weight:500;color:var(--muted)" id="dest-count-label"></span>
+    </p>
+    <div class="table-wrap">
+      <table id="dest-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th onclick="sortDestTable('destino_recomendado')">Destino</th>
+            <th onclick="sortDestTable('tipo_destino_recomendado')">Tipo</th>
+            <th onclick="sortDestTable('usuarios')">Usuarios ▼</th>
+            <th>Share</th>
+            <th onclick="sortDestTable('confianza_prom')">Confianza prom.</th>
+          </tr>
+        </thead>
+        <tbody id="dest-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- FACTS TABLE -->
+  <p class="section-label">Tabla de datos agregados</p>
+  <div class="panel">
+    <p class="panel-title">
+      <span class="dot" style="background:var(--violet)"></span>
+      Detalle por segmento
+      <span style="margin-left:auto;font-size:11px;font-weight:500;color:var(--muted)" id="facts-count-label"></span>
+    </p>
+    <div class="table-wrap">
+      <table id="facts-table">
+        <thead>
+          <tr>
+            <th onclick="sortFactsTable('pais')">País</th>
+            <th onclick="sortFactsTable('tipo_viaje')">Tipo</th>
+            <th onclick="sortFactsTable('income')">Income</th>
+            <th onclick="sortFactsTable('rango_edad_primer_trip')">Edad</th>
+            <th onclick="sortFactsTable('producto_main')">Producto rec.</th>
+            <th onclick="sortFactsTable('tipo_destino_recomendado')">Dest. tipo</th>
+            <th onclick="sortFactsTable('confianza_bucket')">Confianza</th>
+            <th onclick="sortFactsTable('usuarios')">Usuarios</th>
+            <th onclick="sortFactsTable('confianza_prom')">Conf. prom.</th>
+            <th onclick="sortFactsTable('dias_anticipacion_med')">Días antici.</th>
+            <th onclick="sortFactsTable('dias_timing_med')">Días timing</th>
+            <th onclick="sortFactsTable('gb_prom')">GB USD prom.</th>
+          </tr>
+        </thead>
+        <tbody id="facts-tbody"></tbody>
+      </table>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+
+</div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+let D = null;   // { meta, epoch, dicts, rows(plain from JSON) }
+let R = null;   // rows convertidas a typed arrays
+let N = 0;      // total de filas
+
+let segRows = [];     // tabla de segmentos (detalle), recalculada en cada computeAll()
+let topDest = [];     // top destinos, recalculado en cada computeAll()
+
+// pagination
+let pageSize = 25;
+let currentPage = 0;
+let sortCol = 'usuarios';
+let sortDir = -1;
+let sortDestCol = 'usuarios';
+let sortDestDir = -1;
+
+// charts
+let charts = {};
+let sqlColsMode = 'all'; // 'all' | 'key'
+let lastAudienceCount = 0;
+
+// estado de seleccion de los arboles (origen / destino / fecha): 'ALL' o Set de indices/dayOffsets
+const state = {
+  origenSel: 'ALL',
+  destSel: 'ALL',
+  fechaSel: 'ALL',
+  multi: {}, // { pais:'ALL'|Set, tviaje:'ALL'|Set, income:'ALL'|Set, edad:'ALL'|Set, producto:'ALL'|Set, confianza:'ALL'|Set }
+};
+
+// estado auxiliar de apertura de nodos del arbol (persiste entre renders)
+const _origenTreeOpen = new Set();
+const _destTreeOpen = new Set();
+const _fechaTreeOpen = new Set();
+
+let origenTreeData = null; // [{tipoIdx,label,count,items:[{idx,label,count}]}]
+let destTreeData = null;   // [{tipoIdx,label,count,items:[{idx,label,count}]}]
+let fechaTreeData = null;  // [{key:year,count,months:Map}]
+let allDayOffsets = [];    // universo de dias presentes en la data (fijo, no cambia con filtros)
+let _fechaUniverseBuilt = false;
+
+// conteos "cross-filtrados": para cada filtro, cuantos usuarios quedarian si se
+// aplicaran todos los DEMAS filtros activos (pero no el de esta misma dimension).
+// Se recalculan en cada applyFilters() y alimentan los numeros de cada dropdown/arbol.
+let facetCounts = null;
+
+const CONF_BUCKET_LABELS = ['Baja (≤0.4)', 'Media (0.4-0.6)', 'Alta (0.6-0.8)', 'Muy Alta (>0.8)'];
+function confBucketIdx(confInt) {
+  if (confInt <= 39) return 0;
+  if (confInt <= 59) return 1;
+  if (confInt <= 79) return 2;
+  return 3;
+}
+
+// ── FILTROS MULTI-SELECT GENERICOS (pais, tipo viaje, income, edad, producto, confianza) ──
+// Cada filtro es un arbol plano (sin agrupar), igual UX que destino/origen: checkbox por
+// item + "seleccionar todos" + busqueda opcional.
+const MULTI_FILTERS = {
+  pais:      { title: 'País',           rowKey: 'pais',       dict: () => D.dicts.pais,          search: true  },
+  tviaje:    { title: 'Tipo viaje',      rowKey: 'tipo_viaje', dict: () => D.dicts.tipo_viaje,     search: false },
+  income:    { title: 'Income',         rowKey: 'income',     dict: () => D.dicts.income,         search: false },
+  edad:      { title: 'Edad',           rowKey: 'edad',       dict: () => D.dicts.edad,           search: false },
+  producto:  { title: 'Producto rec.',  rowKey: 'producto',   dict: () => D.dicts.producto_main,  search: false },
+  confianza: { title: 'Confianza',      rowKey: null,         dict: () => CONF_BUCKET_LABELS,     search: false },
+};
+Object.keys(MULTI_FILTERS).forEach(key => { state.multi[key] = 'ALL'; });
+
+function buildMultiFilterHTML() {
+  const html = Object.keys(MULTI_FILTERS).map(key => {
+    const cfg = MULTI_FILTERS[key];
+    const searchHtml = cfg.search
+      ? `<div class="filter-panel-search"><input type="search" id="${key}Search" placeholder="Buscar…" oninput="renderFlatFilter('${key}')"></div>`
+      : '';
+    return `
+      <div class="filter-group filter-item">
+        <span class="filter-label">${cfg.title}</span>
+        <button class="filter-trigger" id="${key}Trigger" onclick="togglePanel('${key}Panel','${key}Trigger')">
+          <span class="filter-trigger-text" id="${key}TriggerText">Todos</span>
+          <span class="chevron">▾</span>
+        </button>
+        <div class="filter-panel" id="${key}Panel">
+          ${searchHtml}
+          <label class="filter-select-all-row">
+            <input type="checkbox" id="${key}SelectAll" onchange="multiToggleAll('${key}', this.checked)">
+            <span>Seleccionar todos</span>
+          </label>
+          <div class="period-tree" id="${key}Tree"></div>
+          <div class="filter-panel-footer">
+            <span class="page-info" id="${key}Summary" style="margin-right:0"></span>
+            <button class="filter-mini-btn" onclick="closePanel('${key}Panel','${key}Trigger')">Cerrar</button>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+  document.getElementById('filterBar').insertAdjacentHTML('afterbegin', html);
+}
+
+function multiUniverseSize(key) { return MULTI_FILTERS[key].dict().length; }
+
+function buildFlatFilterItems(key) {
+  const cfg = MULTI_FILTERS[key];
+  const dict = cfg.dict();
+  const counts = facetCounts ? facetCounts[key] : null;
+  return dict.map((label, idx) => ({ idx, label, count: counts ? (counts[idx] || 0) : 0 })).sort((a,b) => b.count - a.count);
+}
+
+function materializeMultiSel(key) {
+  const sel = state.multi[key];
+  if (sel === 'ALL') return new Set(MULTI_FILTERS[key].dict().map((_,i) => i));
+  return new Set(sel);
+}
+function normalizeMultiSel(key, set) {
+  if (set.size >= multiUniverseSize(key)) return 'ALL';
+  return set;
+}
+function multiToggleAll(key, checked) {
+  state.multi[key] = checked ? 'ALL' : new Set();
+  renderFlatFilter(key);
+  applyFilters();
+}
+
+function renderFlatFilter(key) {
+  const items = buildFlatFilterItems(key);
+  const container = document.getElementById(key + 'Tree');
+  container.innerHTML = '';
+  const searchEl = document.getElementById(key + 'Search');
+  const search = searchEl ? (searchEl.value || '').trim().toLowerCase() : '';
+  const sel = state.multi[key] || 'ALL';
+  const allMode = sel === 'ALL';
+
+  document.getElementById(key + 'SelectAll').checked = allMode;
+  document.getElementById(key + 'SelectAll').indeterminate = false;
+
+  const visible = search ? items.filter(it => it.label.toLowerCase().includes(search)) : items;
+  for (const it of visible) {
+    const row = document.createElement('div');
+    row.className = 'period-node top-node';
+    const label = document.createElement('label');
+    label.className = 'period-row';
+    const spacer = document.createElement('span');
+    spacer.className = 'period-toggle';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = allMode || sel.has(it.idx);
+    cb.addEventListener('change', () => {
+      const next = materializeMultiSel(key);
+      if (cb.checked) next.add(it.idx); else next.delete(it.idx);
+      state.multi[key] = normalizeMultiSel(key, next);
+      renderFlatFilter(key);
+      applyFilters();
+    });
+    const name = document.createElement('span');
+    name.textContent = it.label;
+    const count = document.createElement('span');
+    count.className = 'period-count';
+    count.textContent = fmt(it.count);
+    label.append(spacer, cb, name, count);
+    label.addEventListener('click', e => e.stopPropagation());
+    row.appendChild(label);
+    container.appendChild(row);
+  }
+}
+
+function renderAllFlatFilters() {
+  Object.keys(MULTI_FILTERS).forEach(renderFlatFilter);
+}
+
+function updateMultiFilterSummaries() {
+  Object.keys(MULTI_FILTERS).forEach(key => {
+    const sel = state.multi[key] || 'ALL';
+    const total = multiUniverseSize(key);
+    const triggerText = sel === 'ALL' ? 'Todos' : `${sel.size} seleccionado(s)`;
+    document.getElementById(key + 'TriggerText').textContent = triggerText;
+    document.getElementById(key + 'Summary').textContent = sel === 'ALL'
+      ? `${fmt(total)} opciones disponibles`
+      : `${fmt(sel.size)} de ${fmt(total)} seleccionados`;
+  });
+}
+
+// datos cargados al final del body via dashboard_data.js
+
+// ── INIT DATA ─────────────────────────────────────────────────────────────────
+function initData() {
+  D = window.DASHBOARD_DATA;
+  N = D.rows.pais.length;
+
+  function toTyped(arr, TypedArr) { return TypedArr.from(arr); }
+  R = {
+    pais:        toTyped(D.rows.pais, Uint8Array),
+    tipo_viaje:  toTyped(D.rows.tipo_viaje, Uint8Array),
+    income:      toTyped(D.rows.income, Uint8Array),
+    edad:        toTyped(D.rows.edad, Uint8Array),
+    producto:    toTyped(D.rows.producto, Uint8Array),
+    destino:     toTyped(D.rows.destino, Uint16Array),
+    origen:      toTyped(D.rows.origen, Uint16Array),
+    confianza:   toTyped(D.rows.confianza, Uint8Array),
+    dias_antic:  toTyped(D.rows.dias_antic, Int16Array),
+    dias_timing: toTyped(D.rows.dias_timing, Int16Array),
+    fecha_day:   toTyped(D.rows.fecha_day, Int16Array),
+    gb:          toTyped(D.rows.gb, Int32Array),
+  };
+  // liberar la version JSON cruda (no la necesitamos mas)
+  D.rows = null;
+}
+
+// ── FILTERS (dropdowns simples) ───────────────────────────────────────────────
+function initFilters() {
+  buildMultiFilterHTML();
+}
+
+// ── INFO BANNER ────────────────────────────────────────────────────────────────
+const INFO_BANNER_KEY = 'rebuyKnnInfoBannerDismissed';
+function toggleInfoBanner() {
+  document.getElementById('infoBanner').classList.toggle('open');
+}
+function dismissInfoBanner() {
+  document.getElementById('infoBanner').style.display = 'none';
+  try { localStorage.setItem(INFO_BANNER_KEY, '1'); } catch (e) {}
+}
+(function initInfoBanner() {
+  try {
+    if (localStorage.getItem(INFO_BANNER_KEY) === '1') {
+      document.addEventListener('DOMContentLoaded', () => {
+        const el = document.getElementById('infoBanner');
+        if (el) el.style.display = 'none';
+      });
+    }
+  } catch (e) {}
+})();
+
+function populateSelect(id, opts) {
+  const sel = document.getElementById(id);
+  opts.forEach(v => {
+    const o = document.createElement('option');
+    o.value = o.textContent = v;
+    sel.appendChild(o);
+  });
+}
+
+function getFilter(id) { return document.getElementById(id).value; }
+
+function defaultFechaSel() {
+  const today = new Date();
+  const todayUTC = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+  const todayOffset = Math.round((todayUTC - EPOCH_MS) / 86400000);
+  const futureDays = allDayOffsets.filter(d => d >= todayOffset);
+  return normalizeFechaSel(new Set(futureDays));
+}
+
+function resetFilters() {
+  Object.keys(MULTI_FILTERS).forEach(key => { state.multi[key] = 'ALL'; });
+  state.origenSel = 'ALL';
+  state.destSel  = 'ALL';
+  state.fechaSel = defaultFechaSel();
+  renderAllFlatFilters();
+  renderOrigenTree();
+  renderDestTree();
+  renderFechaTree();
+  applyFilters();
+}
+
+// ── PANELS (abrir/cerrar) ─────────────────────────────────────────────────────
+function togglePanel(panelId, triggerId) {
+  const panel = document.getElementById(panelId);
+  const trig  = document.getElementById(triggerId);
+  const willOpen = !panel.classList.contains('open');
+  document.querySelectorAll('.filter-panel.open').forEach(p => p.classList.remove('open'));
+  document.querySelectorAll('.filter-trigger.open').forEach(t => t.classList.remove('open'));
+  if (willOpen) { panel.classList.add('open'); trig.classList.add('open'); }
+}
+function closePanel(panelId, triggerId) {
+  document.getElementById(panelId).classList.remove('open');
+  document.getElementById(triggerId).classList.remove('open');
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.filter-item')) {
+    document.querySelectorAll('.filter-panel.open').forEach(p => p.classList.remove('open'));
+    document.querySelectorAll('.filter-trigger.open').forEach(t => t.classList.remove('open'));
+  }
+});
+
+// ── COMPUTE (pasada unica sobre las filas filtradas) ──────────────────────────
+function buildMultiMask(key) {
+  const sel = state.multi[key];
+  if (sel === 'ALL') return null;
+  const mask = new Uint8Array(multiUniverseSize(key));
+  for (const idx of sel) mask[idx] = 1;
+  return mask;
+}
+
+// Para cada dimension, cuenta cuantas filas pasarian si se aplicaran todos los
+// DEMAS filtros activos (ignorando el filtro de esa misma dimension). Esto es lo
+// que hace que los numeros de cada dropdown/arbol reflejen el resto de los filtros
+// y se reordenen solos, sin que seleccionar una opcion haga desaparecer las demas.
+function computeFacetCounts(m) {
+  const nOrigen = D.dicts.origen.length;
+  const nDestino = D.dicts.destino.length;
+  const maxDay = allDayOffsets.length ? Math.max(...allDayOffsets) + 1 : 1;
+
+  const fc = {
+    pais:      new Uint32Array(m.nPais),
+    tviaje:    new Uint32Array(m.nTV),
+    income:    new Uint32Array(m.nInc),
+    edad:      new Uint32Array(m.nEdad),
+    producto:  new Uint32Array(m.nProd),
+    confianza: new Uint32Array(4),
+    origen:    new Uint32Array(nOrigen),
+    destino:   new Uint32Array(nDestino),
+    fecha:     new Uint32Array(maxDay),
+  };
+
+  for (let i = 0; i < N; i++) {
+    const pv = R.pais[i], tv = R.tipo_viaje[i], iv = R.income[i], ev = R.edad[i], prv = R.producto[i];
+    const ov = R.origen[i], dv = R.destino[i], fv = R.fecha_day[i];
+    const cb = confBucketIdx(R.confianza[i]);
+
+    const pOk  = !m.paisMask     || m.paisMask[pv];
+    const tOk  = !m.tviajeMask   || m.tviajeMask[tv];
+    const iOk  = !m.incomeMask   || m.incomeMask[iv];
+    const eOk  = !m.edadMask     || m.edadMask[ev];
+    const prOk = !m.productoMask || m.productoMask[prv];
+    const cOk  = !m.confMask     || m.confMask[cb];
+    const oOk  = !m.origenMask   || m.origenMask[ov];
+    const dOk  = !m.destMask     || m.destMask[dv];
+    const fOk  = !m.fechaMask    || (fv >= 0 && m.fechaMask[fv]);
+
+    if (tOk && iOk && eOk && prOk && cOk && oOk && dOk && fOk) fc.pais[pv]++;
+    if (pOk && iOk && eOk && prOk && cOk && oOk && dOk && fOk) fc.tviaje[tv]++;
+    if (pOk && tOk && eOk && prOk && cOk && oOk && dOk && fOk) fc.income[iv]++;
+    if (pOk && tOk && iOk && prOk && cOk && oOk && dOk && fOk) fc.edad[ev]++;
+    if (pOk && tOk && iOk && eOk && cOk && oOk && dOk && fOk) fc.producto[prv]++;
+    if (pOk && tOk && iOk && eOk && prOk && oOk && dOk && fOk) fc.confianza[cb]++;
+    if (pOk && tOk && iOk && eOk && prOk && cOk && dOk && fOk) fc.origen[ov]++;
+    if (pOk && tOk && iOk && eOk && prOk && cOk && oOk && fOk) fc.destino[dv]++;
+    if (fv >= 0 && pOk && tOk && iOk && eOk && prOk && cOk && oOk && dOk) fc.fecha[fv]++;
+  }
+  return fc;
+}
+
+function applyFilters() {
+  const paisMask      = buildMultiMask('pais');
+  const tviajeMask    = buildMultiMask('tviaje');
+  const incomeMask    = buildMultiMask('income');
+  const edadMask      = buildMultiMask('edad');
+  const productoMask  = buildMultiMask('producto');
+  const confMask      = buildMultiMask('confianza');
+
+  const origenAll = state.origenSel === 'ALL';
+  let origenMask = null;
+  if (!origenAll) {
+    origenMask = new Uint8Array(D.dicts.origen.length);
+    for (const idx of state.origenSel) origenMask[idx] = 1;
+  }
+  const destAll = state.destSel === 'ALL';
+  let destMask = null;
+  if (!destAll) {
+    destMask = new Uint8Array(D.dicts.destino.length);
+    for (const idx of state.destSel) destMask[idx] = 1;
+  }
+  const fechaAll = state.fechaSel === 'ALL';
+  let fechaMask = null;
+  if (!fechaAll) {
+    const maxDay = allDayOffsets.length ? Math.max(...allDayOffsets) + 1 : 0;
+    fechaMask = new Uint8Array(maxDay);
+    for (const d of state.fechaSel) fechaMask[d] = 1;
+  }
+
+  // dims para la tabla de segmentos (mixed-radix key)
+  const nPais = D.dicts.pais.length, nTV = D.dicts.tipo_viaje.length,
+        nInc = D.dicts.income.length, nEdad = D.dicts.edad.length,
+        nProd = D.dicts.producto_main.length, nTipoDest = D.dicts.tipo_destino.length;
+
+  let total = 0, confAltaCount = 0, confSum = 0, gbSum = 0;
+  const anticFreq  = new Int32Array(600);   // dias_antic: 0-586 observado
+  const timingFreq = new Int32Array(1100);  // dias_timing: 0-1086 observado
+  let timingNullCount = 0;
+
+  const paisAgg  = new Float64Array(nPais);
+  const prodAgg  = new Float64Array(nProd);
+  const tipoDestAgg = new Float64Array(nTipoDest);
+  const destCount = new Float64Array(D.dicts.destino.length);
+  const destConfSum = new Float64Array(D.dicts.destino.length);
+  const confHist = new Int32Array(10);
+  const segAgg = new Map(); // key -> {count, confSum, gbSum, anticSum, anticCnt, timingSum, timingCnt}
+
+  for (let i = 0; i < N; i++) {
+    if (paisMask     && !paisMask[R.pais[i]])           continue;
+    if (tviajeMask   && !tviajeMask[R.tipo_viaje[i]])    continue;
+    if (incomeMask   && !incomeMask[R.income[i]])        continue;
+    if (edadMask     && !edadMask[R.edad[i]])            continue;
+    if (productoMask && !productoMask[R.producto[i]])    continue;
+
+    const oIdx = R.origen[i];
+    if (origenMask && !origenMask[oIdx]) continue;
+
+    const dIdx = R.destino[i];
+    if (destMask && !destMask[dIdx]) continue;
+
+    const fday = R.fecha_day[i];
+    if (fechaMask && (fday < 0 || !fechaMask[fday])) continue;
+
+    const confInt = R.confianza[i];
+    const cB = confBucketIdx(confInt);
+    if (confMask && !confMask[cB]) continue;
+
+    total++;
+    confSum += confInt;
+    gbSum += R.gb[i];
+    if (confInt >= 80) confAltaCount++;
+    confHist[Math.min(9, Math.floor(confInt / 10))]++;
+
+    const an = R.dias_antic[i];
+    if (an >= 0 && an < anticFreq.length) anticFreq[an]++;
+    const ti = R.dias_timing[i];
+    if (ti < 0) timingNullCount++;
+    else if (ti < timingFreq.length) timingFreq[ti]++;
+
+    paisAgg[R.pais[i]]++;
+    prodAgg[R.producto[i]]++;
+    const tIdx = D.dicts.destino_tipo_idx[dIdx];
+    tipoDestAgg[tIdx]++;
+    destCount[dIdx]++;
+    destConfSum[dIdx] += confInt;
+
+    const key = R.pais[i] + nPais * (R.tipo_viaje[i] + nTV * (R.income[i] + nInc * (R.edad[i] + nEdad * (R.producto[i] + nProd * (tIdx + nTipoDest * cB)))));
+    let s = segAgg.get(key);
+    if (!s) { s = { count:0, confSum:0, gbSum:0, anticSum:0, anticCnt:0, timingSum:0, timingCnt:0 }; segAgg.set(key, s); }
+    s.count++; s.confSum += confInt; s.gbSum += R.gb[i];
+    if (an >= 0) { s.anticSum += an; s.anticCnt++; }
+    if (ti >= 0) { s.timingSum += ti; s.timingCnt++; }
+  }
+
+  function medianFromFreq(freq, excludeNull) {
+    const target = total - (excludeNull || 0);
+    if (target <= 0) return null;
+    const half = target / 2;
+    let acc = 0;
+    for (let v = 0; v < freq.length; v++) {
+      acc += freq[v];
+      if (acc >= half) return v;
+    }
+    return null;
+  }
+
+  const result = {
+    total, confAltaCount, confSum, gbSum,
+    confAvg: total ? confSum / total / 100 : 0,
+    pctAlta: total ? confAltaCount / total * 100 : 0,
+    anticMed: medianFromFreq(anticFreq, 0),
+    timingMed: medianFromFreq(timingFreq, timingNullCount),
+    gbAvg: total ? gbSum / total : 0,
+    paisAgg, prodAgg, tipoDestAgg, confHist,
+    anticFreq, timingFreq,
+    destCount, destConfSum,
+    segAgg, dims: {nPais,nTV,nInc,nEdad,nProd,nTipoDest},
+  };
+
+  facetCounts = computeFacetCounts({
+    paisMask, tviajeMask, incomeMask, edadMask, productoMask, confMask, origenMask, destMask, fechaMask,
+    nPais, nTV, nInc, nEdad, nProd,
+  });
+
+  renderActiveFilters();
+  updateKPIs(result);
+  updateCharts(result);
+  buildTopDest(result);
+  buildSegRows(result);
+  currentPage = 0;
+  renderFactsTable();
+  renderDestTable();
+  renderAllFlatFilters();
+  renderOrigenTree();
+  renderDestTree();
+  renderFechaTree();
+  updateTreeSummaries();
+  updateMultiFilterSummaries();
+  lastAudienceCount = result.total;
+  renderAudienceSQL();
+}
+
+function renderActiveFilters() {
+  const div = document.getElementById('active-filters');
+  div.innerHTML = '';
+  Object.keys(MULTI_FILTERS).forEach(key => {
+    const sel = state.multi[key];
+    if (!sel || sel === 'ALL') return;
+    const cfg = MULTI_FILTERS[key];
+    const chip = document.createElement('span');
+    chip.className = 'active-chip';
+    chip.textContent = `${cfg.title}: ${sel.size} seleccionado(s) ✕`;
+    chip.onclick = () => { state.multi[key] = 'ALL'; renderFlatFilter(key); applyFilters(); };
+    div.appendChild(chip);
+  });
+  if (state.origenSel !== 'ALL') {
+    const chip = document.createElement('span');
+    chip.className = 'active-chip';
+    chip.textContent = `Origen: ${state.origenSel.size} seleccionados ✕`;
+    chip.onclick = () => { state.origenSel = 'ALL'; renderOrigenTree(); applyFilters(); };
+    div.appendChild(chip);
+  }
+  if (state.destSel !== 'ALL') {
+    const chip = document.createElement('span');
+    chip.className = 'active-chip';
+    chip.textContent = `Destino: ${state.destSel.size} seleccionados ✕`;
+    chip.onclick = () => { state.destSel = 'ALL'; renderDestTree(); applyFilters(); };
+    div.appendChild(chip);
+  }
+  if (state.fechaSel !== 'ALL') {
+    const chip = document.createElement('span');
+    chip.className = 'active-chip';
+    chip.textContent = `Fecha: ${state.fechaSel.size} días seleccionados ✕`;
+    chip.onclick = () => { state.fechaSel = 'ALL'; renderFechaTree(); applyFilters(); };
+    div.appendChild(chip);
+  }
+}
+
+// ── KPIs ──────────────────────────────────────────────────────────────────────
+function updateKPIs(a) {
+  const total = D.meta.total_usuarios;
+  document.getElementById('badge-total').textContent = fmt(a.total) + ' usuarios';
+  document.getElementById('kpi-total').textContent = fmt(a.total);
+  document.getElementById('kpi-total-pct').textContent = pct(a.total / total * 100) + '% del total (' + fmt(total) + ')';
+  document.getElementById('kpi-conf').textContent = a.confAvg.toFixed(2);
+  document.getElementById('kpi-conf-alta').textContent = pct(a.pctAlta) + '% con confianza ≥ 0.8';
+  document.getElementById('kpi-antic').textContent = (a.anticMed != null ? Math.round(a.anticMed) : '—') + 'd';
+  document.getElementById('kpi-timing').textContent = (a.timingMed != null ? Math.round(a.timingMed) : '—') + 'd';
+  document.getElementById('kpi-gb').textContent = '$' + fmt(Math.round(a.gbAvg));
+}
+
+// ── CHARTS ───────────────────────────────────────────────────────────────────
+const PALETTE = [
+  '#1A3FA0','#378ADD','#8B5CF6','#087456','#CF3B24','#0891b2',
+  '#f59e0b','#10b981','#ef4444','#6366f1','#14b8a6','#f97316',
+  '#84cc16','#e879f9'
+];
+
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+function makeBar(id, labels, data, colors, horizontal=false) {
+  destroyChart(id);
+  const ctx = document.getElementById(id).getContext('2d');
+  charts[id] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ data, backgroundColor: colors || PALETTE.slice(0, labels.length),
+                   borderRadius: 5, borderSkipped: false }]
+    },
+    options: {
+      indexAxis: horizontal ? 'y' : 'x',
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { display: false },
+                 tooltip: { callbacks: { label: c => ' ' + fmt(c.raw) + ' usuarios' } } },
+      scales: {
+        x: { grid: { display: !horizontal }, ticks: { font: { size: 10 } } },
+        y: { grid: { display: horizontal  }, ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+function makeDoughnut(id, labels, data) {
+  destroyChart(id);
+  const ctx = document.getElementById(id).getContext('2d');
+  charts[id] = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor: PALETTE.slice(0, labels.length), borderWidth: 2 }] },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      cutout: '60%',
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 10 }, padding: 8, boxWidth: 10 } },
+        tooltip: { callbacks: { label: c => ' ' + fmt(c.raw) + ' usuarios' } }
+      }
+    }
+  });
+}
+
+function updateCharts(a) {
+  // país
+  const paisEntries = D.dicts.pais.map((label,i) => [label, a.paisAgg[i]])
+    .filter(e => e[1] > 0).sort((x,y) => y[1]-x[1]);
+  makeBar('chart-pais', paisEntries.map(e=>e[0]), paisEntries.map(e=>e[1]), null, true);
+
+  // producto
+  const prodEntries = D.dicts.producto_main.map((label,i) => [label, a.prodAgg[i]])
+    .filter(e => e[1] > 0).sort((x,y) => y[1]-x[1]);
+  makeDoughnut('chart-producto', prodEntries.map(e=>e[0]), prodEntries.map(e=>e[1]));
+
+  // tipo destino rec
+  const tdEntries = D.dicts.tipo_destino.map((label,i) => [label, a.tipoDestAgg[i]])
+    .filter(e => e[1] > 0).sort((x,y) => y[1]-x[1]);
+  makeBar('chart-tipo-dest', tdEntries.map(e=>e[0]), tdEntries.map(e=>e[1]), null, true);
+
+  // confianza histograma (10 buckets de 0.1)
+  destroyChart('chart-confianza');
+  const confLabels = Array.from({length:10}, (_,i) => `${(i/10).toFixed(1)}-${((i+1)/10).toFixed(1)}`);
+  const ctx2 = document.getElementById('chart-confianza').getContext('2d');
+  charts['chart-confianza'] = new Chart(ctx2, {
+    type: 'bar',
+    data: {
+      labels: confLabels,
+      datasets: [{ data: Array.from(a.confHist),
+                   backgroundColor: confLabels.map((_,i) => {
+                     if (i >= 8) return '#087456';
+                     if (i >= 6) return '#0891b2';
+                     if (i >= 4) return '#f59e0b';
+                     return '#E24B4A';
+                   }), borderRadius: 4 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { display: false } },
+      scales: { x: { ticks: { font: { size: 9 } } }, y: { ticks: { font: { size: 9 } } } }
+    }
+  });
+
+  // timing (buckets iguales a la version anterior)
+  const timingBins = [
+    {lo:-9999, hi:-1,  label:'Sin fecha'},
+    {lo:0,     hi:29,  label:'0-30 días'},
+    {lo:30,    hi:89,  label:'30-90 días'},
+    {lo:90,    hi:179, label:'90-180 días'},
+    {lo:180,   hi:364, label:'180d-1año'},
+    {lo:365,   hi:729, label:'1-2 años'},
+    {lo:730,   hi:99999,label:'>2 años'},
+  ];
+  const timingCounts = timingBins.map(b => {
+    if (b.lo === -9999) {
+      // "sin fecha" no aplica aca (ya excluido de timingFreq); dejamos en 0
+      return 0;
+    }
+    let s = 0;
+    const hi = Math.min(b.hi, a.timingFreq.length - 1);
+    for (let v = Math.max(0,b.lo); v <= hi; v++) s += a.timingFreq[v];
+    return s;
+  });
+  destroyChart('chart-timing');
+  const ctx3 = document.getElementById('chart-timing').getContext('2d');
+  charts['chart-timing'] = new Chart(ctx3, {
+    type: 'bar',
+    data: {
+      labels: timingBins.map(b=>b.label),
+      datasets: [{ data: timingCounts,
+                   backgroundColor: PALETTE.slice(0, timingBins.length), borderRadius: 4 }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { display: false },
+                 tooltip: { callbacks: { label: c => ' ' + fmt(c.raw) + ' usuarios' } } },
+      scales: { x: { ticks: { font: { size: 9 } } }, y: { ticks: { font: { size: 9 } } } }
+    }
+  });
+}
+
+// ── TOP DESTINOS (calculado sobre el subconjunto filtrado) ────────────────────
+function buildTopDest(a) {
+  const arr = [];
+  for (let d = 0; d < D.dicts.destino.length; d++) {
+    const c = a.destCount[d];
+    if (c <= 0) continue;
+    arr.push({
+      destino: D.dicts.destino[d],
+      tipo: D.dicts.tipo_destino[D.dicts.destino_tipo_idx[d]],
+      usuarios: c,
+      confianza_prom: a.destConfSum[d] / c / 100,
+    });
+  }
+  arr.sort((x,y) => y.usuarios - x.usuarios);
+  topDest = arr;
+}
+
+function renderDestTable() {
+  const sorted = [...topDest].sort((a,b) => {
+    const ca = a[sortDestCol], cb = b[sortDestCol];
+    if (typeof ca === 'string') return sortDestDir * (ca||'').localeCompare(cb||'');
+    return sortDestDir * ((ca||0) - (cb||0));
+  });
+  const top = sorted.slice(0, 30);
+  const maxU = top[0]?.usuarios || 1;
+  const totalU = topDest.reduce((s,r)=>s+r.usuarios,0) || 1;
+  const tbody = document.getElementById('dest-tbody');
+  document.getElementById('dest-count-label').textContent = `${fmt(topDest.length)} destinos con datos`;
+  tbody.innerHTML = top.map((r, i) => {
+    const share = (r.usuarios / totalU * 100).toFixed(1);
+    const barW  = Math.round(r.usuarios / maxU * 100);
+    return `<tr>
+      <td style="color:var(--muted);font-weight:600">${i+1}</td>
+      <td><strong>${r.destino}</strong></td>
+      <td>${tipoTag(r.tipo)}</td>
+      <td><strong>${fmt(r.usuarios)}</strong></td>
+      <td>
+        <div class="bar-inline">
+          <span style="font-size:11px;min-width:36px;text-align:right">${share}%</span>
+          <div class="bar-bg"><div class="bar-fill" style="width:${barW}%"></div></div>
+        </div>
+      </td>
+      <td>${confBadge(r.confianza_prom)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function sortDestTable(col) {
+  const map = {destino_recomendado:'destino', tipo_destino_recomendado:'tipo', usuarios:'usuarios', confianza_prom:'confianza_prom'};
+  sortDestDir = sortDestCol === (map[col]||col) ? -sortDestDir : -1;
+  sortDestCol = map[col] || col;
+  renderDestTable();
+}
+
+// ── SEGMENTOS (tabla detalle, reconstruida desde segAgg) ──────────────────────
+function buildSegRows(a) {
+  const {nPais,nTV,nInc,nEdad,nProd,nTipoDest} = a.dims;
+  const rows = [];
+  for (const [key, s] of a.segAgg) {
+    let k = key;
+    const pais = k % nPais; k = Math.floor(k / nPais);
+    const tv   = k % nTV;   k = Math.floor(k / nTV);
+    const inc  = k % nInc;  k = Math.floor(k / nInc);
+    const edad = k % nEdad; k = Math.floor(k / nEdad);
+    const prod = k % nProd; k = Math.floor(k / nProd);
+    const tIdx = k % nTipoDest; k = Math.floor(k / nTipoDest);
+    const cB   = k;
+    rows.push({
+      pais: D.dicts.pais[pais], tipo_viaje: D.dicts.tipo_viaje[tv], income: D.dicts.income[inc],
+      edad: D.dicts.edad[edad], producto: D.dicts.producto_main[prod], tipo_destino: D.dicts.tipo_destino[tIdx],
+      confianza_bucket: CONF_BUCKET_LABELS[cB],
+      usuarios: s.count,
+      confianza_prom: s.confSum / s.count / 100,
+      dias_antic: s.anticCnt ? s.anticSum / s.anticCnt : null,
+      dias_timing: s.timingCnt ? s.timingSum / s.timingCnt : null,
+      gb_prom: s.gbSum / s.count,
+    });
+  }
+  segRows = rows;
+}
+
+function renderFactsTable() {
+  const sorted = [...segRows].sort((a,b) => {
+    const va = a[sortCol], vb = b[sortCol];
+    if (typeof va === 'string') return sortDir * (va||'').localeCompare(vb||'');
+    return sortDir * ((va||0) - (vb||0));
+  });
+  const start = currentPage * pageSize;
+  const page  = sorted.slice(start, start + pageSize);
+  document.getElementById('facts-count-label').textContent =
+    fmt(segRows.length) + ' segmentos · ' + fmt(segRows.reduce((s,r) => s + (r.usuarios||0), 0)) + ' usuarios';
+  const tbody = document.getElementById('facts-tbody');
+  tbody.innerHTML = page.map(r => `<tr>
+    <td><strong>${r.pais}</strong></td>
+    <td>${r.tipo_viaje === 'Int' ? '🌍 Int' : '🏠 Nac'}</td>
+    <td>${incomeTag(r.income)}</td>
+    <td>${r.edad}</td>
+    <td>${prodTag(r.producto)}</td>
+    <td>${tipoTag(r.tipo_destino)}</td>
+    <td>${r.confianza_bucket}</td>
+    <td><strong>${fmt(r.usuarios)}</strong></td>
+    <td>${confBadge(r.confianza_prom)}</td>
+    <td>${r.dias_antic != null ? Math.round(r.dias_antic) + 'd' : '—'}</td>
+    <td>${r.dias_timing != null ? Math.round(r.dias_timing) + 'd' : '—'}</td>
+    <td>$${r.gb_prom != null ? fmt(Math.round(r.gb_prom)) : '—'}</td>
+  </tr>`).join('');
+  renderPagination(sorted.length);
+}
+
+function renderPagination(total) {
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const div = document.getElementById('pagination');
+  let html = `<span class="page-info">Página ${currentPage+1} de ${totalPages} (${fmt(total)} segmentos)</span>`;
+  html += `<button class="page-btn" onclick="goPage(0)" ${currentPage===0?'disabled':''}>«</button>`;
+  html += `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===0?'disabled':''}>‹</button>`;
+  const start = Math.max(0, currentPage - 2);
+  const end   = Math.min(totalPages - 1, currentPage + 2);
+  for (let p = start; p <= end; p++) {
+    html += `<button class="page-btn ${p===currentPage?'active':''}" onclick="goPage(${p})">${p+1}</button>`;
+  }
+  html += `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage>=totalPages-1?'disabled':''}>›</button>`;
+  html += `<button class="page-btn" onclick="goPage(${totalPages-1})" ${currentPage>=totalPages-1?'disabled':''}>»</button>`;
+  div.innerHTML = html;
+}
+
+function goPage(p) { currentPage = p; renderFactsTable(); }
+
+function sortFactsTable(col) {
+  const map = {rango_edad_primer_trip:'edad', tipo_destino_recomendado:'tipo_destino', producto_main:'producto',
+               dias_anticipacion_med:'dias_antic', dias_timing_med:'dias_timing'};
+  const c = map[col] || col;
+  sortDir = sortCol === c ? -sortDir : -1;
+  sortCol = c;
+  currentPage = 0;
+  renderFactsTable();
+}
+
+// ── ARBOL: ORIGEN 1ER VIAJE (agrupado por tipo_origen) ────────────────────────
+function buildOrigenTree() {
+  const nOrigen = D.dicts.origen.length;
+  const counts = facetCounts ? facetCounts.origen : new Uint32Array(nOrigen);
+  const groups = new Map();
+  for (let o = 0; o < nOrigen; o++) {
+    const tIdx = D.dicts.origen_tipo_idx[o];
+    if (!groups.has(tIdx)) groups.set(tIdx, { tipoIdx: tIdx, label: D.dicts.tipo_origen[tIdx], count: 0, items: [] });
+    const g = groups.get(tIdx);
+    const c = counts[o] || 0;
+    g.count += c;
+    g.items.push({ idx: o, label: D.dicts.origen[o], count: c });
+  }
+  const arr = [...groups.values()];
+  arr.forEach(g => g.items.sort((a,b) => b.count - a.count));
+  arr.sort((a,b) => b.count - a.count);
+  return arr;
+}
+
+function origenUniverseSize() { return D.dicts.origen.length; }
+
+function renderOrigenTree() {
+  origenTreeData = buildOrigenTree();
+  const container = document.getElementById('origenTree');
+  container.innerHTML = '';
+  const search = (document.getElementById('origenSearch').value || '').trim().toLowerCase();
+  const allMode = state.origenSel === 'ALL';
+
+  document.getElementById('origenSelectAll').checked = allMode;
+  document.getElementById('origenSelectAll').indeterminate = false;
+
+  for (const group of origenTreeData) {
+    const items = search
+      ? group.items.filter(it => it.label.toLowerCase().includes(search))
+      : group.items;
+    if (search && items.length === 0) continue;
+
+    const allSel  = allMode || group.items.every(it => state.origenSel.has(it.idx));
+    const someSel = allMode || group.items.some(it => state.origenSel.has(it.idx));
+
+    const wrap = document.createElement('div');
+    wrap.className = 'period-node top-node';
+
+    const gLabel = document.createElement('label');
+    gLabel.className = 'period-row';
+    const toggle = document.createElement('span');
+    toggle.className = 'period-toggle';
+    toggle.textContent = '›';
+    const gCb = document.createElement('input');
+    gCb.type = 'checkbox';
+    gCb.checked = allSel;
+    gCb.indeterminate = !allSel && someSel;
+    gCb.addEventListener('change', () => {
+      const next = materializeOrigenSel();
+      if (gCb.checked) group.items.forEach(it => next.add(it.idx));
+      else group.items.forEach(it => next.delete(it.idx));
+      state.origenSel = normalizeOrigenSel(next);
+      renderOrigenTree();
+      applyFilters();
+    });
+    const gName = document.createElement('span');
+    gName.textContent = `${group.label}`;
+    const gCount = document.createElement('span');
+    gCount.className = 'period-count';
+    gCount.textContent = fmt(group.count);
+    gLabel.append(toggle, gCb, gName, gCount);
+    gLabel.addEventListener('click', e => { if (!e.target.classList.contains('period-toggle')) e.stopPropagation(); });
+
+    if (search && items.length) _origenTreeOpen.add(group.tipoIdx);
+    const isOpen = _origenTreeOpen.has(group.tipoIdx);
+    const children = document.createElement('div');
+    children.className = 'tree-children' + (isOpen ? '' : ' collapsed');
+    toggle.addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (_origenTreeOpen.has(group.tipoIdx)) _origenTreeOpen.delete(group.tipoIdx);
+      else _origenTreeOpen.add(group.tipoIdx);
+      children.classList.toggle('collapsed');
+    });
+
+    for (const it of items) {
+      const row = document.createElement('div');
+      row.className = 'period-node';
+      const iLabel = document.createElement('label');
+      iLabel.className = 'period-row';
+      const spacer = document.createElement('span');
+      spacer.className = 'period-toggle';
+      const iCb = document.createElement('input');
+      iCb.type = 'checkbox';
+      iCb.checked = allMode || state.origenSel.has(it.idx);
+      iCb.addEventListener('change', () => {
+        const next = materializeOrigenSel();
+        if (iCb.checked) next.add(it.idx); else next.delete(it.idx);
+        state.origenSel = normalizeOrigenSel(next);
+        renderOrigenTree();
+        applyFilters();
+      });
+      const iName = document.createElement('span');
+      iName.textContent = it.label;
+      const iCount = document.createElement('span');
+      iCount.className = 'period-count';
+      iCount.textContent = fmt(it.count);
+      iLabel.append(spacer, iCb, iName, iCount);
+      iLabel.addEventListener('click', e => { e.stopPropagation(); });
+      row.appendChild(iLabel);
+      children.appendChild(row);
+    }
+
+    wrap.appendChild(gLabel);
+    wrap.appendChild(children);
+    container.appendChild(wrap);
+  }
+}
+
+function materializeOrigenSel() {
+  if (state.origenSel === 'ALL') return new Set(D.dicts.origen.map((_,i)=>i));
+  return new Set(state.origenSel);
+}
+function normalizeOrigenSel(set) {
+  if (set.size >= origenUniverseSize()) return 'ALL';
+  return set;
+}
+function origenToggleAll(checked) {
+  state.origenSel = checked ? 'ALL' : new Set();
+  renderOrigenTree();
+  applyFilters();
+}
+
+// ── ARBOL: DESTINO (agrupado por tipo_destino) ────────────────────────────────
+function buildDestTree() {
+  const nDest = D.dicts.destino.length;
+  const counts = facetCounts ? facetCounts.destino : new Uint32Array(nDest);
+  const groups = new Map();
+  for (let d = 0; d < nDest; d++) {
+    const tIdx = D.dicts.destino_tipo_idx[d];
+    if (!groups.has(tIdx)) groups.set(tIdx, { tipoIdx: tIdx, label: D.dicts.tipo_destino[tIdx], count: 0, items: [] });
+    const g = groups.get(tIdx);
+    const c = counts[d] || 0;
+    g.count += c;
+    g.items.push({ idx: d, label: D.dicts.destino[d], count: c });
+  }
+  const arr = [...groups.values()];
+  arr.forEach(g => g.items.sort((a,b) => b.count - a.count));
+  arr.sort((a,b) => b.count - a.count);
+  return arr;
+}
+
+function destUniverseSize() { return D.dicts.destino.length; }
+
+function renderDestTree() {
+  destTreeData = buildDestTree();
+  const container = document.getElementById('destTree');
+  container.innerHTML = '';
+  const search = (document.getElementById('destSearch').value || '').trim().toLowerCase();
+  const allMode = state.destSel === 'ALL';
+
+  document.getElementById('destSelectAll').checked = allMode;
+  document.getElementById('destSelectAll').indeterminate = false;
+
+  for (const group of destTreeData) {
+    const items = search
+      ? group.items.filter(it => it.label.toLowerCase().includes(search))
+      : group.items;
+    if (search && items.length === 0) continue;
+
+    const allSel  = allMode || group.items.every(it => state.destSel.has(it.idx));
+    const someSel = allMode || group.items.some(it => state.destSel.has(it.idx));
+
+    const wrap = document.createElement('div');
+    wrap.className = 'period-node top-node';
+
+    const gLabel = document.createElement('label');
+    gLabel.className = 'period-row';
+    const toggle = document.createElement('span');
+    toggle.className = 'period-toggle';
+    toggle.textContent = '›';
+    const gCb = document.createElement('input');
+    gCb.type = 'checkbox';
+    gCb.checked = allSel;
+    gCb.indeterminate = !allSel && someSel;
+    gCb.addEventListener('change', () => {
+      const next = materializeDestSel();
+      if (gCb.checked) group.items.forEach(it => next.add(it.idx));
+      else group.items.forEach(it => next.delete(it.idx));
+      state.destSel = normalizeDestSel(next);
+      renderDestTree();
+      applyFilters();
+    });
+    const gName = document.createElement('span');
+    gName.textContent = `${group.label}`;
+    const gCount = document.createElement('span');
+    gCount.className = 'period-count';
+    gCount.textContent = fmt(group.count);
+    gLabel.append(toggle, gCb, gName, gCount);
+    gLabel.addEventListener('click', e => { if (!e.target.classList.contains('period-toggle')) e.stopPropagation(); });
+
+    if (search && items.length) _destTreeOpen.add(group.tipoIdx);
+    const isOpen = _destTreeOpen.has(group.tipoIdx);
+    const children = document.createElement('div');
+    children.className = 'tree-children' + (isOpen ? '' : ' collapsed');
+    toggle.addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (_destTreeOpen.has(group.tipoIdx)) _destTreeOpen.delete(group.tipoIdx);
+      else _destTreeOpen.add(group.tipoIdx);
+      children.classList.toggle('collapsed');
+    });
+
+    for (const it of items) {
+      const row = document.createElement('div');
+      row.className = 'period-node';
+      const iLabel = document.createElement('label');
+      iLabel.className = 'period-row';
+      const spacer = document.createElement('span');
+      spacer.className = 'period-toggle';
+      const iCb = document.createElement('input');
+      iCb.type = 'checkbox';
+      iCb.checked = allMode || state.destSel.has(it.idx);
+      iCb.addEventListener('change', () => {
+        const next = materializeDestSel();
+        if (iCb.checked) next.add(it.idx); else next.delete(it.idx);
+        state.destSel = normalizeDestSel(next);
+        renderDestTree();
+        applyFilters();
+      });
+      const iName = document.createElement('span');
+      iName.textContent = it.label;
+      const iCount = document.createElement('span');
+      iCount.className = 'period-count';
+      iCount.textContent = fmt(it.count);
+      iLabel.append(spacer, iCb, iName, iCount);
+      iLabel.addEventListener('click', e => { e.stopPropagation(); });
+      row.appendChild(iLabel);
+      children.appendChild(row);
+    }
+
+    wrap.appendChild(gLabel);
+    wrap.appendChild(children);
+    container.appendChild(wrap);
+  }
+}
+
+function materializeDestSel() {
+  if (state.destSel === 'ALL') return new Set(D.dicts.destino.map((_,i)=>i));
+  return new Set(state.destSel);
+}
+function normalizeDestSel(set) {
+  if (set.size >= destUniverseSize()) return 'ALL';
+  return set;
+}
+function destToggleAll(checked) {
+  state.destSel = checked ? 'ALL' : new Set();
+  renderDestTree();
+  applyFilters();
+}
+
+// ── ARBOL: FECHA A COMUNICAR (año > mes > semana > dia) ───────────────────────
+function isoWeekInfo(date) {
+  const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const week = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  return { year: d.getUTCFullYear(), week };
+}
+function pad2(v) { return String(v).padStart(2,'0'); }
+
+let EPOCH_MS = 0;
+function dateFromOffset(off) { return new Date(EPOCH_MS + off * 86400000); }
+
+function buildPeriodTree() {
+  EPOCH_MS = Date.parse(D.epoch + 'T00:00:00Z');
+  // el universo de dias es fijo (no depende de los filtros activos); se calcula una sola vez
+  if (!_fechaUniverseBuilt) {
+    const seen = new Set();
+    for (let i = 0; i < N; i++) {
+      const fd = R.fecha_day[i];
+      if (fd >= 0) seen.add(fd);
+    }
+    allDayOffsets = [...seen];
+    _fechaUniverseBuilt = true;
+  }
+  const dayCountArr = facetCounts ? facetCounts.fecha : null;
+
+  const root = new Map();
+  for (const off of allDayOffsets) {
+    const cnt = dayCountArr ? (dayCountArr[off] || 0) : 0;
+    const dt = dateFromOffset(off);
+    const y = dt.getUTCFullYear();
+    const mKey = y + '-' + pad2(dt.getUTCMonth()+1);
+    const iso = isoWeekInfo(dt);
+    const wKey = iso.year + '-W' + pad2(iso.week);
+    const isoDate = dt.toISOString().slice(0,10);
+
+    if (!root.has(y)) root.set(y, { key: String(y), count: 0, months: new Map() });
+    const yearNode = root.get(y); yearNode.count += cnt;
+    if (!yearNode.months.has(mKey)) yearNode.months.set(mKey, { key: mKey, count: 0, weeks: new Map() });
+    const monthNode = yearNode.months.get(mKey); monthNode.count += cnt;
+    if (!monthNode.weeks.has(wKey)) monthNode.weeks.set(wKey, { key: wKey, count: 0, days: [] });
+    const weekNode = monthNode.weeks.get(wKey); weekNode.count += cnt;
+    weekNode.days.push({ key: off, count: cnt, iso: isoDate });
+  }
+  return [...root.values()].sort((a,b) => b.key.localeCompare(a.key));
+}
+
+function fechaUniverseSize() { return allDayOffsets.length; }
+function materializeFechaSel() {
+  if (state.fechaSel === 'ALL') return new Set(allDayOffsets);
+  return new Set(state.fechaSel);
+}
+function normalizeFechaSel(set) {
+  if (set.size >= fechaUniverseSize()) return 'ALL';
+  return set;
+}
+function fechaToggleAll(checked) {
+  state.fechaSel = checked ? 'ALL' : new Set();
+  renderFechaTree();
+  applyFilters();
+}
+
+function dayChecked(off) { return state.fechaSel === 'ALL' || state.fechaSel.has(off); }
+
+function makeGroupRow(labelText, countText, childKeys, openKey, openSet, onRendered) {
+  const label = document.createElement('label');
+  label.className = 'period-row';
+  const toggle = document.createElement('span');
+  toggle.className = 'period-toggle';
+  toggle.textContent = '›';
+  const cb = document.createElement('input');
+  cb.type = 'checkbox';
+  const allMode = state.fechaSel === 'ALL';
+  const checkedCount = allMode ? childKeys.length : childKeys.filter(k => state.fechaSel.has(k)).length;
+  cb.checked = checkedCount === childKeys.length && childKeys.length > 0;
+  cb.indeterminate = checkedCount > 0 && checkedCount < childKeys.length;
+  cb.addEventListener('change', () => {
+    const next = materializeFechaSel();
+    if (cb.checked) childKeys.forEach(k => next.add(k));
+    else childKeys.forEach(k => next.delete(k));
+    state.fechaSel = normalizeFechaSel(next);
+    renderFechaTree();
+    applyFilters();
+  });
+  const name = document.createElement('span');
+  name.textContent = labelText;
+  const count = document.createElement('span');
+  count.className = 'period-count';
+  count.textContent = countText;
+  label.append(toggle, cb, name, count);
+  label.addEventListener('click', e => { if (!e.target.classList.contains('period-toggle')) e.stopPropagation(); });
+  toggle.addEventListener('click', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (openSet.has(openKey)) openSet.delete(openKey); else openSet.add(openKey);
+    onRendered();
+  });
+  return label;
+}
+
+function renderFechaTree() {
+  fechaTreeData = buildPeriodTree();
+  const container = document.getElementById('fechaTree');
+  container.innerHTML = '';
+  document.getElementById('fechaSelectAll').checked = state.fechaSel === 'ALL';
+  document.getElementById('fechaSelectAll').indeterminate = false;
+
+  for (const year of fechaTreeData) {
+    const yearDays = [];
+    for (const m of year.months.values()) for (const w of m.weeks.values()) for (const d of w.days) yearDays.push(d.key);
+
+    const wrap = document.createElement('div');
+    wrap.className = 'period-node top-node';
+    const isOpen = _fechaTreeOpen.has(year.key);
+    const childrenY = document.createElement('div');
+    childrenY.className = 'tree-children' + (isOpen ? '' : ' collapsed');
+
+    const yRow = makeGroupRow(year.key, fmt(year.count), yearDays, year.key, _fechaTreeOpen, () => {
+      childrenY.classList.toggle('collapsed', !_fechaTreeOpen.has(year.key));
+    });
+    wrap.appendChild(yRow);
+
+    const months = [...year.months.values()].sort((a,b) => b.key.localeCompare(a.key));
+    for (const month of months) {
+      const monthDays = [];
+      for (const w of month.weeks.values()) for (const d of w.days) monthDays.push(d.key);
+
+      const mWrap = document.createElement('div');
+      mWrap.className = 'period-node';
+      const mOpenKey = 'M:' + month.key;
+      const mOpen = _fechaTreeOpen.has(mOpenKey);
+      const childrenM = document.createElement('div');
+      childrenM.className = 'tree-children' + (mOpen ? '' : ' collapsed');
+      const mRow = makeGroupRow(month.key, fmt(month.count), monthDays, mOpenKey, _fechaTreeOpen, () => {
+        childrenM.classList.toggle('collapsed', !_fechaTreeOpen.has(mOpenKey));
+      });
+      mWrap.appendChild(mRow);
+
+      const weeks = [...month.weeks.values()].sort((a,b) => b.key.localeCompare(a.key));
+      for (const week of weeks) {
+        const weekDays = week.days.map(d => d.key);
+        const wWrap = document.createElement('div');
+        wWrap.className = 'period-node';
+        const wOpenKey = 'W:' + month.key + ':' + week.key;
+        const wOpen = _fechaTreeOpen.has(wOpenKey);
+        const childrenW = document.createElement('div');
+        childrenW.className = 'tree-children' + (wOpen ? '' : ' collapsed');
+        const wRow = makeGroupRow(week.key, fmt(week.count), weekDays, wOpenKey, _fechaTreeOpen, () => {
+          childrenW.classList.toggle('collapsed', !_fechaTreeOpen.has(wOpenKey));
+        });
+        wWrap.appendChild(wRow);
+
+        for (const day of week.days.slice().sort((a,b) => b.key - a.key)) {
+          const dRow = document.createElement('div');
+          dRow.className = 'period-node';
+          const dLabel = document.createElement('label');
+          dLabel.className = 'period-row';
+          const spacer = document.createElement('span');
+          spacer.className = 'period-toggle';
+          const dCb = document.createElement('input');
+          dCb.type = 'checkbox';
+          dCb.checked = dayChecked(day.key);
+          dCb.addEventListener('change', () => {
+            const next = materializeFechaSel();
+            if (dCb.checked) next.add(day.key); else next.delete(day.key);
+            state.fechaSel = normalizeFechaSel(next);
+            renderFechaTree();
+            applyFilters();
+          });
+          const dName = document.createElement('span');
+          dName.textContent = day.iso;
+          const dCount = document.createElement('span');
+          dCount.className = 'period-count';
+          dCount.textContent = fmt(day.count);
+          dLabel.append(spacer, dCb, dName, dCount);
+          dLabel.addEventListener('click', e => e.stopPropagation());
+          dRow.appendChild(dLabel);
+          childrenW.appendChild(dRow);
+        }
+        wWrap.appendChild(childrenW);
+        childrenM.appendChild(wWrap);
+      }
+      mWrap.appendChild(childrenM);
+      childrenY.appendChild(mWrap);
+    }
+    wrap.appendChild(childrenY);
+    container.appendChild(wrap);
+  }
+}
+
+function updateTreeSummaries() {
+  const origenText = state.origenSel === 'ALL' ? 'Todos' : `${state.origenSel.size} origen(es)`;
+  document.getElementById('origenTriggerText').textContent = origenText;
+  document.getElementById('origenSummary').textContent = state.origenSel === 'ALL'
+    ? `${fmt(origenUniverseSize())} orígenes disponibles`
+    : `${fmt(state.origenSel.size)} de ${fmt(origenUniverseSize())} seleccionados`;
+
+  const destText = state.destSel === 'ALL' ? 'Todos' : `${state.destSel.size} destino(s)`;
+  document.getElementById('destTriggerText').textContent = destText;
+  document.getElementById('destSummary').textContent = state.destSel === 'ALL'
+    ? `${fmt(destUniverseSize())} destinos disponibles`
+    : `${fmt(state.destSel.size)} de ${fmt(destUniverseSize())} seleccionados`;
+
+  const fechaText = state.fechaSel === 'ALL' ? 'Todas' : `${state.fechaSel.size} día(s)`;
+  document.getElementById('fechaTriggerText').textContent = fechaText;
+  document.getElementById('fechaSummary').textContent = state.fechaSel === 'ALL'
+    ? `${fmt(fechaUniverseSize())} días disponibles`
+    : `${fmt(state.fechaSel.size)} de ${fmt(fechaUniverseSize())} seleccionados`;
+}
+
+// ── AUDIENCIA: GENERADOR DE SQL (Trino) ────────────────────────────────────────
+const AUDIENCE_TABLE = 'raw.mktbi_potentials_rebuyers';
+
+const SQL_KEY_COLS = [
+  'social_id', 'pais', 'producto_recomendado', 'destino_recomendado',
+  'tipo_destino_recomendado', 'confianza', 'dias_anticipacion_compra_2',
+  'dias_checkout_a_compra_2', 'fecha_comunicar',
+];
+const SQL_ALL_COLS = [
+  'social_id', 'pais', 'tipo_viaje', 'product_type', 'tipo_destino', 'destino_trip',
+  'origen_trip', 'rango_edad_primer_trip', 'income', 'gross_bookings_usd', 'producto_recomendado',
+  'destino_recomendado', 'tipo_destino_recomendado', 'confianza',
+  'dias_anticipacion_compra_2', 'dias_checkout_a_compra_2', 'distancia_vecino_1',
+  'trip_checkout', 'fecha_comunicar',
+];
+
+const CONF_BUCKET_RANGES = {
+  'Baja (≤0.4)':     [0,    0.39],
+  'Media (0.4-0.6)': [0.40, 0.59],
+  'Alta (0.6-0.8)':  [0.60, 0.79],
+  'Muy Alta (>0.8)': [0.80, 1.00],
+};
+
+// Condicion SQL simple e inclusiva por categoria de producto_main: solo exige que
+// producto_recomendado contenga la keyword correspondiente (sin excluir combos).
+// "Otro" es la unica que necesita excluir todas las keywords conocidas, porque
+// por definicion es "ninguna de las anteriores".
+const PRODUCTO_KEYWORDS = ['Vuelos', 'Hoteles', 'Traslados', 'Asistencia', 'Excursiones', 'Autos', 'Universal'];
+function likeCol(kw, negate) {
+  return `producto_recomendado ${negate ? 'NOT ' : ''}LIKE '%${kw}%'`;
+}
+function buildProductoClause(label) {
+  if (label === 'Paquete (Vuelos+Hoteles)') return `(${likeCol('Vuelos')} AND ${likeCol('Hoteles')})`;
+  if (label === 'Otro') return `(${PRODUCTO_KEYWORDS.map(kw => likeCol(kw, true)).join('\n       AND ')})`;
+  const ownKw = { 'Vuelos':'Vuelos', 'Hoteles':'Hoteles', 'Traslados':'Traslados',
+                  'Asistencia al viajero':'Asistencia', 'Excursiones':'Excursiones',
+                  'Autos':'Autos', 'Universal':'Universal' }[label];
+  return likeCol(ownKw);
+}
+
+function sqlStr(s) { return "'" + String(s).replace(/'/g, "''") + "'"; }
+
+function setSqlCols(mode) {
+  sqlColsMode = mode;
+  document.getElementById('sqlColsAllBtn').classList.toggle('active', mode === 'all');
+  document.getElementById('sqlColsKeyBtn').classList.toggle('active', mode === 'key');
+  renderAudienceSQL();
+}
+
+// Elige la forma mas corta/eficiente de expresar una seleccion contra un universo
+// conocido: si quedo seleccionada la mayoria, es mas corto excluir lo poco que
+// falta (<> / NOT IN) en vez de listar casi todos los valores seleccionados (IN).
+function inOrNotInRaw(column, selectedLabelsArr, allLabelsArr) {
+  const selectedSet = new Set(selectedLabelsArr);
+  const excluded = allLabelsArr.filter(l => !selectedSet.has(l));
+  if (excluded.length < selectedLabelsArr.length) {
+    if (!excluded.length) return null; // seleccion completa, sin filtro real
+    if (excluded.length === 1) return `${column} <> ${sqlStr(excluded[0])}`;
+    return `${column} NOT IN (${excluded.map(sqlStr).join(', ')})`;
+  }
+  if (selectedLabelsArr.length === 1) return `${column} = ${sqlStr(selectedLabelsArr[0])}`;
+  return `${column} IN (${selectedLabelsArr.map(sqlStr).join(', ')})`;
+}
+
+function buildOrigenClause() {
+  if (state.origenSel === 'ALL') return null;
+  if (!origenTreeData) origenTreeData = buildOrigenTree();
+  // La tabla no tiene una columna "tipo_origen", asi que siempre usamos los
+  // codigos especificos de origen_trip (no hay forma de agrupar por tipo en SQL).
+  const allCodes = [];
+  const selectedCodes = [];
+  for (const group of origenTreeData) {
+    for (const it of group.items) {
+      allCodes.push(it.label);
+      if (state.origenSel.has(it.idx)) selectedCodes.push(it.label);
+    }
+  }
+  if (!selectedCodes.length) return 'FALSE /* ningun origen seleccionado */';
+  return inOrNotInRaw('origen_trip', selectedCodes, allCodes) || null;
+}
+
+function buildDestinoClause() {
+  if (state.destSel === 'ALL') return null;
+  if (!destTreeData) destTreeData = buildDestTree();
+
+  const allCodes = [];
+  destTreeData.forEach(g => g.items.forEach(it => allCodes.push(it.label)));
+  const S = state.destSel.size;
+
+  // Mayoria seleccionada: mas corto excluir los pocos destinos que faltan.
+  if (S > allCodes.length / 2) {
+    const excluded = [];
+    destTreeData.forEach(g => g.items.forEach(it => { if (!state.destSel.has(it.idx)) excluded.push(it.label); }));
+    if (!excluded.length) return null;
+    if (excluded.length === 1) return `destino_recomendado <> ${sqlStr(excluded[0])}`;
+    return `destino_recomendado NOT IN (${excluded.map(sqlStr).join(', ')})`;
+  }
+
+  // Minoria seleccionada: agrupar por tipo_destino_recomendado cuando se
+  // selecciono el grupo entero, para que la query quede corta y legible.
+  const fullTypes = [];
+  const partialDestinos = [];
+  for (const group of destTreeData) {
+    const selCount = group.items.filter(it => state.destSel.has(it.idx)).length;
+    if (selCount === 0) continue;
+    if (selCount === group.items.length) fullTypes.push(group.label);
+    else group.items.forEach(it => { if (state.destSel.has(it.idx)) partialDestinos.push(it.label); });
+  }
+  const parts = [];
+  if (fullTypes.length) parts.push(`tipo_destino_recomendado IN (${fullTypes.map(sqlStr).join(', ')})`);
+  if (partialDestinos.length) parts.push(`destino_recomendado IN (${partialDestinos.map(sqlStr).join(', ')})`);
+  if (!parts.length) return 'FALSE /* ningun destino seleccionado */';
+  return parts.length > 1 ? `(${parts.join('\n       OR ')})` : parts[0];
+}
+
+function buildFechaClause() {
+  if (state.fechaSel === 'ALL') return null;
+  const sortedUniverse = [...allDayOffsets].sort((a,b) => a - b);
+  const selectedSorted = [...state.fechaSel].sort((a,b) => a - b);
+  const n = sortedUniverse.length, k = selectedSorted.length;
+  if (k === 0) return 'FALSE /* ninguna fecha seleccionada */';
+  const isoOf = off => dateFromOffset(off).toISOString().slice(0, 10);
+
+  const isSuffix = sortedUniverse.slice(n - k).every((v, i) => v === selectedSorted[i]);
+  if (isSuffix) return `fecha_comunicar >= ${sqlStr(isoOf(selectedSorted[0]))}`;
+
+  const isPrefix = sortedUniverse.slice(0, k).every((v, i) => v === selectedSorted[i]);
+  if (isPrefix) return `fecha_comunicar <= ${sqlStr(isoOf(selectedSorted[k - 1]))}`;
+
+  let contiguous = true;
+  for (let i = 1; i < k; i++) { if (selectedSorted[i] !== selectedSorted[i-1] + 1) { contiguous = false; break; } }
+  if (contiguous && k > 1) {
+    return `fecha_comunicar BETWEEN ${sqlStr(isoOf(selectedSorted[0]))} AND ${sqlStr(isoOf(selectedSorted[k-1]))}`;
+  }
+  if (k <= n / 2) {
+    if (k === 1) return `fecha_comunicar = ${sqlStr(isoOf(selectedSorted[0]))}`;
+    return `fecha_comunicar IN (${selectedSorted.map(o => sqlStr(isoOf(o))).join(', ')})`;
+  }
+  const excluded = sortedUniverse.filter(d => !state.fechaSel.has(d));
+  if (excluded.length === 1) return `fecha_comunicar <> ${sqlStr(isoOf(excluded[0]))}`;
+  return `fecha_comunicar NOT IN (${excluded.map(o => sqlStr(isoOf(o))).join(', ')})`;
+}
+
+function selectedLabels(key) {
+  const sel = state.multi[key];
+  if (sel === 'ALL') return null; // sin filtro
+  return [...sel].map(idx => MULTI_FILTERS[key].dict()[idx]);
+}
+
+function multiInClause(key, column) {
+  const labels = selectedLabels(key);
+  if (labels === null) return null;
+  if (!labels.length) return `FALSE /* ninguna opcion seleccionada en ${column} */`;
+  const allLabels = MULTI_FILTERS[key].dict();
+  return inOrNotInRaw(column, labels, allLabels) || null;
+}
+
+function buildProductoMultiClause() {
+  const labels = selectedLabels('producto');
+  if (labels === null) return null;
+  if (!labels.length) return 'FALSE /* ningun producto seleccionado */';
+  const allLabels = MULTI_FILTERS['producto'].dict();
+  const selectedSet = new Set(labels);
+  const excluded = allLabels.filter(l => !selectedSet.has(l));
+  // Mayoria seleccionada: mas corto negar las pocas categorias excluidas con AND NOT.
+  if (excluded.length < labels.length) {
+    if (!excluded.length) return null;
+    const parts = excluded.map(l => `NOT ${buildProductoClause(l)}`);
+    return parts.length > 1 ? `(${parts.join('\n       AND ')})` : parts[0];
+  }
+  const parts = labels.map(buildProductoClause);
+  return parts.length > 1 ? `(${parts.join('\n       OR ')})` : parts[0];
+}
+
+function buildConfianzaMultiClause() {
+  const labels = selectedLabels('confianza');
+  if (labels === null) return null;
+  if (!labels.length) return 'FALSE /* ninguna confianza seleccionada */';
+  const parts = labels.map(l => {
+    const [lo, hi] = CONF_BUCKET_RANGES[l];
+    return `CAST(confianza AS DOUBLE) BETWEEN ${lo} AND ${hi}`;
+  });
+  return parts.length > 1 ? `(${parts.join('\n       OR ')})` : parts[0];
+}
+
+function buildWhereClauses() {
+  const clauses = [];
+
+  const paisClause   = multiInClause('pais', 'pais');
+  const tviajeClause = multiInClause('tviaje', 'tipo_viaje');
+  const incomeClause = multiInClause('income', 'income');
+  const edadClause   = multiInClause('edad', 'rango_edad_primer_trip');
+  if (paisClause)   clauses.push(paisClause);
+  if (tviajeClause) clauses.push(tviajeClause);
+  if (incomeClause) clauses.push(incomeClause);
+  if (edadClause)   clauses.push(edadClause);
+
+  const productoClause = buildProductoMultiClause();
+  if (productoClause) clauses.push(productoClause);
+
+  const confClause = buildConfianzaMultiClause();
+  if (confClause) clauses.push(confClause);
+
+  const origenClause = buildOrigenClause();
+  if (origenClause) clauses.push(origenClause);
+
+  const destClause = buildDestinoClause();
+  if (destClause) clauses.push(destClause);
+
+  const fechaClause = buildFechaClause();
+  if (fechaClause) clauses.push(fechaClause);
+
+  return clauses;
+}
+
+function highlightSql(sql) {
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const lines = sql.split('\n').map(line => {
+    if (/^\s*--/.test(line)) return `<span class="sql-com">${esc(line)}</span>`;
+    let l = esc(line);
+    l = l.replace(/'([^']*)'/g, m => `<span class="sql-str">${m}</span>`);
+    l = l.replace(/\b(SELECT|FROM|WHERE|AND|OR|IN|NOT|BETWEEN|CASE|WHEN|THEN|ELSE|END|LIKE|CAST|AS|DOUBLE|LIMIT|ORDER BY|DESC|ASC)\b/g,
+      m => `<span class="sql-kw">${m}</span>`);
+    l = l.replace(/\b(\d+\.?\d*)\b(?![^<]*>)/g, m => `<span class="sql-num">${m}</span>`);
+    return l;
+  });
+  return lines.join('\n');
+}
+
+function renderAudienceSQL() {
+  const cols = sqlColsMode === 'key' ? SQL_KEY_COLS : SQL_ALL_COLS;
+  const clauses = buildWhereClauses();
+
+  const warnDiv = document.getElementById('sqlWarning');
+  {
+    warnDiv.innerHTML = '';
+  }
+
+  let sql = `-- Audiencia 2nd Rebuy — generado ${new Date().toISOString().slice(0,10)}\n`;
+  sql += `-- Usuarios estimados: ${fmt(lastAudienceCount)}\n`;
+  sql += `SELECT\n    ${cols.join(',\n    ')}\nFROM ${AUDIENCE_TABLE}`;
+  if (clauses.length) {
+    sql += `\nWHERE ${clauses.join('\n  AND ')}`;
+  }
+  sql += ';';
+
+  document.getElementById('sqlCode').innerHTML = highlightSql(sql);
+  document.getElementById('sqlAudienceSize').textContent = `≈ ${fmt(lastAudienceCount)} usuarios en esta audiencia`;
+  window._lastSqlText = sql;
+}
+
+function copySqlToClipboard() {
+  const text = window._lastSqlText || '';
+  const btn = document.getElementById('btnCopySql');
+  const done = () => {
+    const original = '📋 Copiar SQL';
+    btn.textContent = '✓ Copiado';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = original; btn.classList.remove('copied'); }, 1800);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+  } else {
+    fallbackCopy(text, done);
+  }
+}
+function fallbackCopy(text, cb) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.left = '-9999px';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); } catch (e) {}
+  document.body.removeChild(ta);
+  cb();
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function fmt(n) {
+  if (n == null) return '—';
+  return Number(n).toLocaleString('es-AR');
+}
+function pct(n) { return Math.round(n * 10) / 10; }
+
+function confBadge(v) {
+  if (v == null) return '—';
+  const cls = v >= 0.8 ? 'conf-high' : v >= 0.5 ? 'conf-mid' : 'conf-low';
+  return `<span class="conf-badge ${cls}">${parseFloat(v).toFixed(2)}</span>`;
+}
+
+const DEST_COLORS = {
+  PLAYA_CARIBE:'blue', PLAYA_BR:'teal', PLAYA_MX:'teal',
+  CIUDAD_HUB:'violet', CIUDAD_TUR:'violet', CIUDAD_AR:'violet',
+  EUROPA:'orange', USA_CA:'orange', ASIA:'orange',
+  MONTANA_NAT:'green', CATARATAS:'green',
+  MX_INT:'blue', BR_OTRO:'teal', OTRO:'',
+};
+
+function tipoTag(t) {
+  if (!t || t === 'Sin dato') return `<span style="color:var(--muted);font-size:11px">${t||'—'}</span>`;
+  const c = DEST_COLORS[t] || '';
+  return `<span class="tag tag-${c||'blue'}">${t}</span>`;
+}
+
+const PROD_COLORS = {
+  'Vuelos':'blue','Hoteles':'green','Paquete (Vuelos+Hoteles)':'violet',
+  'Traslados':'teal','Asistencia al viajero':'orange','Excursiones':'green',
+  'Autos':'orange','Universal':'violet','Otro':'',
+};
+function prodTag(p) {
+  const c = PROD_COLORS[p] || 'blue';
+  return `<span class="tag tag-${c}">${p||'—'}</span>`;
+}
+
+const INCOME_COLORS = { High:'green', Medium:'teal', Low:'orange', Unknown:'' };
+function incomeTag(i) {
+  const c = INCOME_COLORS[i] || '';
+  if (!c) return `<span style="color:var(--muted);font-size:11px">${i||'—'}</span>`;
+  return `<span class="tag tag-${c}">${i}</span>`;
+}
+</script>
+<script>document.getElementById('loading-msg').textContent = 'Descargando dashboard_data.js (~190 MB)…';</script>
+<script src="Outputs/dashboard_data.js?v=5"></script>
+<script>
+(function() {
+  if (typeof window.DASHBOARD_DATA === 'undefined') {
+    document.getElementById('loading').innerHTML =
+      '<p style="color:var(--red);text-align:center">No se encontró dashboard_data.js.<br>' +
+      'Corré <code>python pipeline/build_dashboard_data.py</code> y recargá.</p>';
+    return;
+  }
+  document.getElementById('loading-msg').textContent = 'Procesando datos…';
+  // setTimeout para que el navegador pinte el mensaje antes de bloquear el hilo
+  setTimeout(() => {
+    initData();
+    initFilters();
+    fechaTreeData = buildPeriodTree();
+    destTreeData  = buildDestTree();
+    origenTreeData = buildOrigenTree();
+
+    // default: solo fechas de comunicacion >= hoy (el pasado queda disponible para
+    // seleccionar manualmente, pero no viene marcado por defecto)
+    state.fechaSel = defaultFechaSel();
+
+    renderAllFlatFilters();
+    renderOrigenTree();
+    renderDestTree();
+    renderFechaTree();
+    applyFilters();
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display = '';
+  }, 30);
+})();
+</script>
+</body>
+</html>

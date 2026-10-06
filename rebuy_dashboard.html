@@ -1,0 +1,1983 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recompra: del primer trip a la segunda transacción — Despegar</title>
+<style>
+  :root {
+    --bg: #f5f7fa; --panel: #ffffff; --panel-2: #eef3f6; --ink: #17202a; --muted: #667085;
+    --line: #d8dee6; --accent: #1f6f78; --accent-2: #7a5c20; --good: #26734d; --bad: #b54747;
+    --shadow: 0 10px 28px rgba(31,41,55,.08);
+  }
+  body.dark {
+    --bg:#101418; --panel:#171d23; --panel-2:#202832; --ink:#edf2f7; --muted:#a8b3c2; --line:#303a46;
+    --accent:#6bb7bf; --accent-2:#d2aa62; --shadow: 0 12px 30px rgba(0,0,0,.28);
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:"Segoe UI",system-ui,-apple-system,sans-serif; font-size:14px; }
+  header { background:var(--panel); border-bottom:1px solid var(--line); padding:14px 24px; position:sticky; top:0; z-index:10; display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; }
+  h1 { font-size:18px; font-weight:700; margin:0; letter-spacing:-.2px; }
+  .badge { background:var(--accent); color:#fff; font-size:9px; font-weight:800; letter-spacing:.08em; padding:2px 7px 3px; border-radius:4px; text-transform:uppercase; margin-left:8px; vertical-align:middle; }
+  .subtitle { color:var(--muted); font-size:12px; margin-top:3px; }
+  .toggle-btn { background:var(--panel-2); border:1.5px solid var(--line); border-radius:6px; color:var(--muted); cursor:pointer; font-size:11px; font-weight:700; letter-spacing:.05em; padding:6px 12px; }
+  nav.toc { background:var(--panel); border-bottom:1px solid var(--line); padding:8px 24px; display:flex; gap:14px; flex-wrap:wrap; position:sticky; top:97px; z-index:9; font-size:11.5px; }
+  nav.toc a { color:var(--muted); text-decoration:none; font-weight:600; }
+  nav.toc a:hover { color:var(--accent); }
+  nav.maintabs { background:var(--panel-2); border-bottom:1px solid var(--line); padding:0 24px; display:flex; gap:4px; position:sticky; top:53px; z-index:10; }
+  nav.maintabs button { background:transparent; border:none; border-bottom:3px solid transparent; color:var(--muted); font-size:13px; font-weight:700; padding:12px 16px; cursor:pointer; }
+  nav.maintabs button.active { color:var(--accent); border-bottom-color:var(--accent); }
+  nav.maintabs button:hover:not(.active) { color:var(--ink); }
+  .tab-page { display:none; }
+  .tab-page.active { display:block; }
+  main { padding:18px 24px 40px; max-width:1400px; margin:0 auto; }
+  .kpis { display:grid; gap:12px; grid-template-columns:repeat(6, minmax(140px,1fr)); margin-bottom:18px; }
+  .kpi, .panel { background:var(--panel); border:1px solid var(--line); border-radius:8px; box-shadow:var(--shadow); }
+  .kpi { padding:14px; min-height:88px; }
+  .kpi .label { color:var(--muted); font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; }
+  .kpi .value { font-size:23px; font-weight:700; margin-top:8px; line-height:1.1; }
+  .kpi .note { color:var(--muted); font-size:11px; margin-top:4px; }
+  .panel { margin-bottom:18px; overflow:hidden; scroll-margin-top: 100px; }
+  .panel-head { border-bottom:1px solid var(--line); padding:13px 16px; display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; }
+  .panel-head h2 { font-size:14.5px; margin:0; }
+  .panel-head .desc { color:var(--muted); font-size:11.5px; }
+  .panel-body { padding:16px; }
+  .row2 { display:grid; grid-template-columns: 1.3fr 1fr; gap:16px; }
+  .row3 { display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; }
+  .row4 { display:grid; grid-template-columns: repeat(4, 1fr); gap:16px; }
+  @media (max-width: 980px) { .row2, .row3, .row4 { grid-template-columns: 1fr; } .kpis { grid-template-columns: repeat(2,1fr); } }
+  .controls { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; align-items:center; }
+  .controls label { font-size:11px; color:var(--muted); font-weight:700; text-transform:uppercase; margin-right:4px; }
+  select, .seg-btn { border:1px solid var(--line); background:var(--panel-2); color:var(--ink); border-radius:6px; padding:5px 9px; font-size:12.5px; }
+  .seg-btns { display:flex; gap:4px; background:var(--panel-2); border-radius:6px; padding:3px; flex-wrap:wrap; }
+  .seg-btn { border:none; background:transparent; cursor:pointer; font-weight:600; color:var(--muted); padding:5px 10px; border-radius:5px; }
+  .seg-btn.active { background:var(--accent); color:#fff; }
+  table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  th, td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:700; font-size:11px; text-transform:uppercase; }
+  tr:hover td { background:var(--panel-2); }
+  .num { text-align:right; font-variant-numeric:tabular-nums; }
+  .insight-list { margin:0; padding-left:20px; }
+  .insight-list li { margin-bottom:9px; line-height:1.5; font-size:13px; }
+  .insight-list b { color: var(--accent); }
+  .caveat { font-size:11.5px; color:var(--muted); border-top:1px dashed var(--line); margin-top:12px; padding-top:10px; }
+  svg text { fill:var(--ink); font-family:"Segoe UI",sans-serif; }
+  .axis-label { fill:var(--muted); font-size:10.5px; }
+  .grid-line { stroke:var(--line); stroke-width:1; }
+  .legend { display:flex; gap:14px; flex-wrap:wrap; font-size:11.5px; color:var(--muted); margin-top:8px; }
+  .legend .sw { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:5px; vertical-align:middle; }
+  .chart-caption { font-size:12px; color:var(--muted); margin-top:8px; line-height:1.45; }
+  .intro-panel { background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:16px 18px; margin-bottom:18px; }
+  .intro-panel h2 { font-size:14px; margin:0 0 8px; }
+  .intro-panel p { margin:0 0 8px; line-height:1.55; font-size:13px; }
+  .glossary { display:grid; grid-template-columns:repeat(2,1fr); gap:6px 24px; margin-top:8px; }
+  @media (max-width:800px) { .glossary { grid-template-columns:1fr; } }
+  .glossary dt { font-weight:700; font-size:12.5px; color:var(--accent); }
+  .glossary dd { margin:0 0 8px; font-size:12.5px; color:var(--muted); line-height:1.4; }
+  .pill { display:inline-block; padding:2px 8px; border-radius:10px; font-size:10.5px; font-weight:700; }
+  .pill.ok { background:rgba(38,115,77,.15); color:var(--good); }
+  .pill.warn { background:rgba(181,71,71,.15); color:var(--bad); }
+  .pill.na { background:var(--panel-2); color:var(--muted); }
+  .loading { padding:60px; text-align:center; color:var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Recompra: del primer trip a la segunda transacción <span class="badge">Rebuy v2</span></h1>
+    <div class="subtitle" id="subtitle">Cargando datos…</div>
+  </div>
+  <button class="toggle-btn" id="darkToggle">MODO OSCURO</button>
+</header>
+<nav class="maintabs">
+  <button class="active" data-tab="detalle">Detalle y datos</button>
+  <button data-tab="hallazgos">Hallazgos y recomendaciones</button>
+  <button data-tab="ejecutivo">Resumen ejecutivo</button>
+</nav>
+<nav class="toc" id="detalleToc">
+  <a href="#calidad">Calidad de datos</a>
+  <a href="#segmentos">Segmentos</a>
+  <a href="#cohortes">Cohortes</a>
+  <a href="#cohortesPaisPuntos">Cohortes × País/Puntos</a>
+  <a href="#explorador">Constructor de cohortes</a>
+  <a href="#survival">Tiempo a recompra</a>
+  <a href="#perfil">Perfil</a>
+  <a href="#app">App</a>
+  <a href="#loyalty">Loyalty</a>
+  <a href="#payments">Payments</a>
+  <a href="#cs">Customer Service</a>
+  <a href="#path">Path de medios</a>
+  <a href="#modelo">Modelo / Drivers</a>
+  <a href="#limitaciones">Limitaciones</a>
+</nav>
+<main>
+  <div id="app" class="loading">Cargando rebuy_data_v2.json…</div>
+</main>
+
+<script>
+const FMT = new Intl.NumberFormat('es-AR');
+const PCT = (a,b) => (b!=null && b>0) ? (a/b*100) : null;
+const fmtPct = v => v==null ? '—' : v.toFixed(1)+'%';
+const fmtN = v => v==null ? '—' : FMT.format(Math.round(v));
+const COLORS = ['#1f6f78','#7a5c20','#4a5fbf','#b54747','#26734d','#9c5ab8','#c9860f','#3f8f9c','#a8763a'];
+
+function svgEl(tag, attrs) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const k in attrs) el.setAttribute(k, attrs[k]);
+  return el;
+}
+
+function horizontalBarChart(container, items, opts) {
+  opts = opts || {};
+  const w = Math.max(container.clientWidth, 300) || 600, barH = opts.barH || 22, gap = 7;
+  const labelW = opts.labelW || 170, valW = 70;
+  const chartW = Math.max(w - labelW - valW - 16, 40);
+  const maxV = opts.maxV || Math.max(...items.map(d => d.value), 0.0001);
+  const h = items.length * (barH + gap) + 10;
+  const svg = svgEl('svg', {width: w, height: h, viewBox: `0 0 ${w} ${h}`});
+  items.forEach((d, i) => {
+    const y = i * (barH + gap) + 5;
+    const bw = Math.max(chartW * (d.value / maxV), 1);
+    svg.appendChild(svgEl('text', {x: 0, y: y + barH/2 + 4, 'font-size': 11.5})).textContent = d.label;
+    svg.appendChild(svgEl('rect', {x: labelW, y, width: chartW, height: barH, fill: 'var(--panel-2)', rx:3}));
+    svg.appendChild(svgEl('rect', {x: labelW, y, width: bw, height: barH, fill: d.color || 'var(--accent)', rx:3}));
+    const t = svgEl('text', {x: labelW + chartW + 8, y: y + barH/2 + 4, 'font-size': 11.5, 'font-weight':700});
+    t.textContent = d.valueLabel != null ? d.valueLabel : d.value.toFixed(1);
+    svg.appendChild(t);
+  });
+  container.innerHTML = '';
+  container.appendChild(svg);
+}
+
+function verticalBarChart(container, items, opts) {
+  opts = opts || {};
+  const w = Math.max(container.clientWidth, 300) || 600, h = opts.h || 240;
+  const padL = 44, padB = 46, padT = 16, padR = 16;
+  const chartW = Math.max(w - padL - padR, 40), chartH = h - padT - padB;
+  const maxV = opts.maxV || Math.max(...items.map(d => d.value), 0.0001);
+  const barW = chartW / items.length * 0.62;
+  const svg = svgEl('svg', {width:w, height:h, viewBox:`0 0 ${w} ${h}`});
+  [0,0.25,0.5,0.75,1].forEach(f => {
+    const y = padT + chartH * (1-f);
+    svg.appendChild(svgEl('line', {x1:padL, x2:w-padR, y1:y, y2:y, class:'grid-line'}));
+    const t = svgEl('text', {x:padL-6, y:y+3, 'text-anchor':'end', class:'axis-label'});
+    t.textContent = opts.fmtY ? opts.fmtY(maxV*f) : (maxV*f).toFixed(0);
+    svg.appendChild(t);
+  });
+  items.forEach((d,i) => {
+    const cx = padL + chartW * (i+0.5)/items.length;
+    const bh = Math.max(chartH * (d.value/maxV), 0.5);
+    svg.appendChild(svgEl('rect', {x:cx-barW/2, y:padT+chartH-bh, width:barW, height:bh, fill:d.color||'var(--accent)', rx:3}));
+    const vt = svgEl('text', {x:cx, y: padT+chartH-bh-6, 'text-anchor':'middle', 'font-size':11, 'font-weight':700});
+    vt.textContent = d.valueLabel != null ? d.valueLabel : d.value.toFixed(1);
+    svg.appendChild(vt);
+    const lt = svgEl('text', {x:cx, y:padT+chartH+18, 'text-anchor':'middle', class:'axis-label'});
+    lt.textContent = d.label;
+    svg.appendChild(lt);
+  });
+  container.innerHTML = '';
+  container.appendChild(svg);
+}
+
+function lineWithBars(container, labels, barVals, lineVals, opts) {
+  opts = opts || {};
+  const w = Math.max(container.clientWidth, 300) || 900, h = opts.h || 260;
+  const padL = 46, padR = 46, padT = 16, padB = 34;
+  const chartW = Math.max(w - padL - padR, 40), chartH = h - padT - padB;
+  const maxBar = Math.max(...barVals.filter(v=>v!=null), 1);
+  const validLine = lineVals.filter(v => v != null);
+  const maxLine = Math.max(...validLine, 1), minLine = Math.min(...validLine, 0);
+  const n = labels.length;
+  const svg = svgEl('svg', {width:w, height:h, viewBox:`0 0 ${w} ${h}`});
+  [0,0.5,1].forEach(f => {
+    const y = padT + chartH*(1-f);
+    svg.appendChild(svgEl('line', {x1:padL,x2:w-padR,y1:y,y2:y,class:'grid-line'}));
+  });
+  const barW = chartW/n*0.7;
+  barVals.forEach((v,i) => {
+    if (v==null) return;
+    const cx = padL + chartW*(i+0.5)/n;
+    const bh = chartH * (v/maxBar);
+    svg.appendChild(svgEl('rect', {x:cx-barW/2, y:padT+chartH-bh, width:barW, height:bh, fill:'var(--panel-2)', stroke:'var(--line)'}));
+  });
+  let pts = [];
+  lineVals.forEach((v,i) => {
+    if (v==null) return;
+    const cx = padL + chartW*(i+0.5)/n;
+    const cy = padT + chartH*(1-(v-minLine)/(maxLine-minLine||1));
+    pts.push([cx,cy]);
+  });
+  if (pts.length) {
+    const path = pts.map((p,i)=> (i===0?'M':'L')+p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+    svg.appendChild(svgEl('path', {d:path, fill:'none', stroke:'var(--accent)', 'stroke-width':2.5}));
+    pts.forEach(p => svg.appendChild(svgEl('circle', {cx:p[0], cy:p[1], r:2.5, fill:'var(--accent)'})));
+  }
+  const step = Math.ceil(n/14);
+  labels.forEach((l,i) => {
+    if (i % step !== 0) return;
+    const cx = padL + chartW*(i+0.5)/n;
+    const t = svgEl('text', {x:cx, y:h-8, 'text-anchor':'middle', class:'axis-label'});
+    t.textContent = String(l).slice(2);
+    svg.appendChild(t);
+    svg.appendChild(svgEl('line', {x1:cx,x2:cx,y1:padT+chartH,y2:padT+chartH+4, class:'grid-line'}));
+  });
+  container.innerHTML = '';
+  container.appendChild(svg);
+}
+
+function stackedBarChart(container, labels, series, opts) {
+  opts = opts || {};
+  const w = Math.max(container.clientWidth, 300) || 700, h = opts.h || 220;
+  const padL = 10, padR = 10, padT = 10, padB = 40;
+  const chartW = Math.max(w - padL - padR, 40), chartH = h - padT - padB;
+  const n = labels.length;
+  const barW = chartW/n*0.68;
+  const svg = svgEl('svg', {width:w, height:h, viewBox:`0 0 ${w} ${h}`});
+  for (let i=0;i<n;i++) {
+    const cx = padL + chartW*(i+0.5)/n;
+    let acc = 0;
+    series.forEach((s,si) => {
+      const v = s.values[i];
+      const bh = chartH * v;
+      svg.appendChild(svgEl('rect', {x:cx-barW/2, y: padT+chartH-acc-bh, width:barW, height:bh, fill: COLORS[si%COLORS.length]}));
+      acc += bh;
+    });
+    const t = svgEl('text', {x:cx, y:h-8, 'text-anchor':'middle', class:'axis-label'});
+    t.textContent = labels[i];
+    svg.appendChild(t);
+  }
+  container.innerHTML = '';
+  container.appendChild(svg);
+}
+
+// Grafico de multiples series de linea con dominios x/y independientes (usado para
+// curvas de supervivencia Kaplan-Meier y partial dependence). Cada serie es {name,x,y,color}.
+function multiLineChart(container, series, opts) {
+  opts = opts || {};
+  const w = Math.max(container.clientWidth, 300) || 700, h = opts.h || 260;
+  const padL = 46, padR = 16, padT = 14, padB = 30;
+  const chartW = Math.max(w - padL - padR, 40), chartH = h - padT - padB;
+  const allX = series.flatMap(s => s.x), allY = series.flatMap(s => s.y);
+  const minX = opts.minX != null ? opts.minX : Math.min(...allX);
+  const maxX = opts.maxX != null ? opts.maxX : Math.max(...allX);
+  const minY = opts.minY != null ? opts.minY : Math.min(0, ...allY);
+  const maxY = opts.maxY != null ? opts.maxY : Math.max(...allY) * 1.05;
+  const sx = x => padL + chartW * (x - minX) / ((maxX - minX) || 1);
+  const sy = y => padT + chartH * (1 - (y - minY) / ((maxY - minY) || 1));
+  const svg = svgEl('svg', {width:w, height:h, viewBox:`0 0 ${w} ${h}`});
+  [0,0.25,0.5,0.75,1].forEach(f => {
+    const y = padT + chartH*(1-f);
+    svg.appendChild(svgEl('line', {x1:padL,x2:w-padR,y1:y,y2:y,class:'grid-line'}));
+    const t = svgEl('text', {x:padL-6, y:y+3, 'text-anchor':'end', class:'axis-label'});
+    t.textContent = opts.fmtY ? opts.fmtY(minY + (maxY-minY)*f) : (minY + (maxY-minY)*f).toFixed(2);
+    svg.appendChild(t);
+  });
+  [0,0.25,0.5,0.75,1].forEach(f => {
+    const x = padL + chartW*f;
+    const t = svgEl('text', {x, y:h-8, 'text-anchor':'middle', class:'axis-label'});
+    t.textContent = opts.fmtX ? opts.fmtX(minX + (maxX-minX)*f) : Math.round(minX + (maxX-minX)*f);
+    svg.appendChild(t);
+  });
+  series.forEach((s,i) => {
+    const pts = s.x.map((xv,idx) => [sx(xv), sy(s.y[idx])]);
+    const path = pts.map((p,idx)=> (idx===0?'M':'L')+p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+    svg.appendChild(svgEl('path', {d:path, fill:'none', stroke:s.color||COLORS[i%COLORS.length], 'stroke-width':2.3}));
+  });
+  if (opts.diagonal) {
+    svg.appendChild(svgEl('line', {x1:sx(minX), y1:sy(minX), x2:sx(maxX), y2:sy(maxX), stroke:'var(--muted)', 'stroke-dasharray':'4,4'}));
+  }
+  container.innerHTML = '';
+  container.appendChild(svg);
+}
+
+let DATA = null;
+
+function kpiCard(label, value, note) {
+  const d = document.createElement('div'); d.className='kpi';
+  d.innerHTML = `<div class="label">${label}</div><div class="value">${value}</div><div class="note">${note||''}</div>`;
+  return d;
+}
+
+// ---------- Helpers genericos para renderizar cortes categoricos/bins ----------
+function renderBreakdown(chartId, tableBodyId, data, opts) {
+  opts = opts || {};
+  const keyField = opts.keyField || 'categoria';
+  const labelMap = opts.labelMap || (x => x==null ? 'Sin dato' : String(x));
+  let rows = data.rows.filter(r => r.n_usuarios >= (opts.minN || 0));
+  if (opts.order) {
+    rows = rows.slice().sort((a,b) => opts.order.indexOf(String(a[keyField])) - opts.order.indexOf(String(b[keyField])));
+  } else if (opts.sort !== false) {
+    rows = rows.slice().sort((a,b) => b.rate - a.rate);
+  }
+  const items = rows.map((r,i) => ({
+    label: labelMap(r[keyField]) + (opts.showN ? ` (n=${fmtN(r.n_usuarios)})` : ''),
+    value: r.rate*100, valueLabel: (r.rate*100).toFixed(1)+'%', color: COLORS[i%COLORS.length],
+  }));
+  const chartDiv = document.getElementById(chartId);
+  if (chartDiv) horizontalBarChart(chartDiv, items, {maxV: Math.max(...items.map(d=>d.value))*1.15 || 1, labelW: opts.labelW || 190});
+  const tbody = document.getElementById(tableBodyId);
+  if (tbody) tbody.innerHTML = rows.map(r => `<tr><td>${labelMap(r[keyField])}</td><td class="num">${fmtN(r.n_usuarios)}</td><td class="num">${fmtN(r.n_rebuy)}</td><td class="num">${(r.rate*100).toFixed(1)}%</td></tr>`).join('');
+}
+
+function renderDoseResponse(chartId, data) {
+  const items = data.rows.map((r,i) => ({label:r.bucket, value:r.rate*100, valueLabel:(r.rate*100).toFixed(1)+'%', color:'var(--accent)'}));
+  verticalBarChart(document.getElementById(chartId), items, {h:230});
+}
+
+function renderInteractionTable(tableId, data, aLabelFn, bLabelFn) {
+  const rows = data.rows;
+  const aVals = [...new Set(rows.map(r=>r.a))].sort();
+  const bVals = [...new Set(rows.map(r=>r.b))].filter(b=>b!=null);
+  let html = '<table><thead><tr><th></th>' + aVals.map(a=>`<th>${aLabelFn(a)}</th>`).join('') + '</tr></thead><tbody>';
+  bVals.forEach(b => {
+    html += `<tr><td>${bLabelFn(b)}</td>`;
+    aVals.forEach(a => {
+      const cell = rows.find(r => r.a===a && r.b===b);
+      html += `<td class="num">${cell ? (cell.rate*100).toFixed(1)+'%' : '—'}</td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById(tableId).innerHTML = html;
+}
+
+const MONTH_NAMES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+// Heatmap mes1 x mes2: color = % de la fila (dado mes1, que % de la 2da compra cae en cada mes2).
+function renderMonthHeatmap(tableId, m1arr, m2arr, narr) {
+  const rowTotals = {};
+  for (let i=0;i<m1arr.length;i++) rowTotals[m1arr[i]] = (rowTotals[m1arr[i]]||0) + narr[i];
+  const cell = {};
+  for (let i=0;i<m1arr.length;i++) cell[m1arr[i]+'_'+m2arr[i]] = narr[i];
+  let html = '<table style="font-size:11px;"><thead><tr><th>Mes trip1 ↓ / trip2 →</th>' + MONTH_NAMES.map(m=>`<th>${m}</th>`).join('') + '</tr></thead><tbody>';
+  for (let m1=1;m1<=12;m1++) {
+    html += `<tr><td><b>${MONTH_NAMES[m1-1]}</b></td>`;
+    for (let m2=1;m2<=12;m2++) {
+      const n = cell[m1+'_'+m2] || 0;
+      const pct = rowTotals[m1] ? n/rowTotals[m1] : 0;
+      const alpha = Math.min(pct*3.5, 0.9);
+      const bg = m1===m2 ? `rgba(31,111,120,${0.15+alpha})` : `rgba(102,112,133,${alpha*0.6})`;
+      html += `<td class="num" style="background:${bg}; color:var(--ink);">${(pct*100).toFixed(0)}%</td>`;
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  document.getElementById(tableId).innerHTML = html;
+}
+
+function buildExploradorCohortes() {
+  const cube = DATA.descriptive.explorador_cohortes;
+  const dims = DATA.descriptive.explorador_cohortes_dims;
+  if (!cube || !cube.n) return;
+
+  const sec = document.getElementById('explorador');
+  if (!sec) return;
+  if (sec.dataset.initialized) { sec._renderExpl && sec._renderExpl(); return; }
+  sec.dataset.initialized = '1';
+
+  // Build row cache
+  const N = cube.n.length;
+  const rows = [];
+  for (let i = 0; i < N; i++) {
+    rows.push({
+      year: String(cube.cohort_year[i]),
+      month: cube.cohort_month ? String(cube.cohort_month[i]) : '',
+      destino_t1: cube.destino_t1 ? String(cube.destino_t1[i]) : '',
+      destino_t2: cube.destino_t2 ? String(cube.destino_t2[i]) : '',
+      pais: cube.pais[i],           producto_t1: cube.producto_t1[i],
+      producto_t2: cube.producto_t2[i],
+      plataforma: cube.plataforma[i], canal: cube.canal[i],
+      flg_app: cube.flg_app[i],     flg_puntos: cube.flg_puntos[i],
+      n_trx: cube.n_trx[i],         tipo_viaje: cube.tipo_viaje[i],
+      n: cube.n[i],
+      e18: cube.e18[i], r18: cube.r18[i],
+      e12: cube.e12[i], r12: cube.r12[i],
+      e6:  cube.e6[i],  r6:  cube.r6[i],
+    });
+  }
+
+  // Populate dropdowns — destino_t1/t2 NO se alfabetizan (ya vienen ordenados por volumen)
+  const DROP_MAP = { pais:'expl-pais', producto_t1:'expl-producto', producto_t2:'expl-producto-t2', plataforma:'expl-plataforma', canal:'expl-canal', tipo_viaje:'expl-tipoviaje', destino_t1:'expl-destino-t1', destino_t2:'expl-destino-t2' };
+  const NO_SORT_DIMS = new Set(['destino_t1','destino_t2']);
+  Object.entries(DROP_MAP).forEach(([dim, id]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const vals = NO_SORT_DIMS.has(dim) ? (dims[dim] || []).slice() : (dims[dim] || []).slice().sort();
+    el.innerHTML = '<option value="">Todos</option>' + vals.map(v => `<option value="${v}">${v}</option>`).join('');
+  });
+
+  const YEAR_E = { '2022':'e18','2023':'e18','2024':'e12','2025':'e6','2026':'e6' };
+  const YEAR_R = { '2022':'r18','2023':'r18','2024':'r12','2025':'r6','2026':'r6' };
+  const YEAR_LBL = { '2022':'18m','2023':'18m','2024':'12m','2025':'6m','2026':'6m' };
+  const DIM_LBL = { flg_app:{'1':'Con App','0':'Sin App','-1':'Sin dato'}, flg_puntos:{'1':'Con puntos','0':'Sin puntos','-1':'Sin dato'} };
+  const DIM_NAMES = { pais:'País',producto_t1:'Prod. trip 1',producto_t2:'Prod. trip 2',plataforma:'Plataforma',canal:'Canal',flg_app:'App',flg_puntos:'Puntos',n_trx:'Trx trip1',tipo_viaje:'Tipo viaje',destino_t1:'Destino 1er trip',destino_t2:'Destino 2do trip' };
+
+  const MONTH_NAMES = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const state = { year:'',month:'',destino_t1:'',destino_t2:'',pais:'',producto_t1:'',producto_t2:'',plataforma:'',canal:'',flg_app:'',flg_puntos:'',n_trx:'',tipo_viaje:'',rebuy:'' };
+
+  function getE(r) { return r[YEAR_E[r.year]] ?? 0; }
+  function getR(r) { return r[YEAR_R[r.year]] ?? 0; }
+
+  function filterRows() {
+    return rows.filter(r =>
+      (!state.year        || r.year        === state.year)        &&
+      (!state.month       || r.month       === state.month)       &&
+      (!state.destino_t1  || r.destino_t1  === state.destino_t1)  &&
+      (!state.destino_t2  || r.destino_t2  === state.destino_t2)  &&
+      (!state.pais        || r.pais        === state.pais)        &&
+      (!state.producto_t1 || r.producto_t1 === state.producto_t1)&&
+      (!state.producto_t2 || r.producto_t2 === state.producto_t2)&&
+      (!state.plataforma  || r.plataforma  === state.plataforma)  &&
+      (!state.canal       || r.canal       === state.canal)       &&
+      (!state.flg_app     || r.flg_app     === state.flg_app)     &&
+      (!state.flg_puntos  || r.flg_puntos  === state.flg_puntos)  &&
+      (!state.n_trx       || r.n_trx       === state.n_trx)       &&
+      (!state.tipo_viaje  || r.tipo_viaje  === state.tipo_viaje)  &&
+      (!state.rebuy       || (state.rebuy==='1' ? r.producto_t2!=='Sin recompra' : r.producto_t2==='Sin recompra'))
+    );
+  }
+
+  function agg(rs) {
+    let n=0,elig=0,rebuy=0,rebuy_ever=0;
+    rs.forEach(r => {
+      n+=r.n; elig+=getE(r); rebuy+=getR(r);
+      if (r.producto_t2 !== 'Sin recompra') rebuy_ever+=r.n;
+    });
+    return { n, elig, rebuy, rebuy_ever, rate: elig>0 ? rebuy/elig : null };
+  }
+
+  function render() {
+    const filtered = filterRows();
+    const g = agg(filtered);
+
+    // (week disclaimer removed — week filter no longer used)
+    const disclaimerEl = document.getElementById('explWeekDisclaimer');
+    if (disclaimerEl) {
+      if (false) {
+        disclaimerEl.style.display = 'block';
+        disclaimerEl.innerHTML = g.n === 0
+          ? '<b>Sin datos para esta combinación.</b> Al filtrar por semana del mes, muchos segmentos quedan con menos de 30 usuarios y se excluyen por ser estadísticamente insuficientes. Probá con menos filtros activos o elegí otra semana.'
+          : `<b>Filtro de semana activo:</b> solo se muestran combinaciones con ≥ 30 usuarios. Segmentos más específicos pueden no aparecer porque tienen menos datos. Los números siguen siendo válidos para las combinaciones visibles.`;
+      } else {
+        disclaimerEl.style.display = 'none';
+      }
+    }
+
+    // KPI cards
+    const kpiEl = document.getElementById('explKpis');
+    if (kpiEl) {
+      const hLbl = state.year ? YEAR_LBL[state.year] : '6–18m';
+      const horizNote = state.year ? `a ${hLbl} desde el primer trip` : 'horizonte según cohorte: 18m (2022-23), 12m (2024), 6m (2025)';
+      // Hero: tasa de recompra
+      const heroEl = document.getElementById('explHero');
+      const rateValEl = document.getElementById('explRateVal');
+      const rateNoteEl = document.getElementById('explRateNote');
+      const censored = g.n > 0 && g.elig === 0;
+      if (rateValEl) {
+        const rate = g.rate !== null ? g.rate : null;
+        rateValEl.textContent = rate !== null ? fmtPct(rate * 100) : '—';
+        rateValEl.style.color = rate === null ? 'var(--muted)' : rate >= 0.30 ? 'var(--good)' : rate >= 0.18 ? 'var(--accent)' : 'var(--bad)';
+        if (heroEl) heroEl.style.borderColor = rate === null ? 'var(--line)' : rate >= 0.30 ? 'var(--good)' : rate >= 0.18 ? 'var(--accent)' : 'var(--bad)';
+      }
+      if (rateNoteEl) {
+        if (g.elig > 0) {
+          rateNoteEl.textContent = `sobre ${fmtN(g.elig)} usuarios con resultado conocido`;
+          rateNoteEl.style.color = '';
+        } else if (censored) {
+          rateNoteEl.innerHTML = `⚠️ cohorte sin horizonte completo — tasa no calculable aún`;
+          rateNoteEl.style.color = 'var(--accent-2)';
+        } else {
+          rateNoteEl.textContent = 'sin datos suficientes';
+          rateNoteEl.style.color = '';
+        }
+      }
+      // KPIs secundarios — flow visual
+      const sinHorizonte = g.n - g.elig;
+      const noRebuy = g.elig - g.rebuy;
+      if (censored) {
+        kpiEl.innerHTML = [
+          { label:'Usuarios en el segmento', val:fmtN(g.n), note:'total con el perfil seleccionado' },
+          { label:'Ya recompraron (parcial)', val:fmtN(g.rebuy_ever), note:'observado hasta fecha de corte — subestima la tasa real' },
+          { label:'Horizonte disponible', val:'—', note:`necesita ${hLbl} de observación; cohorte aún inmadura` },
+        ].map(k=>`<div class="kpi"><div class="label">${k.label}</div><div class="value" style="${k.val==='—'?'color:var(--muted)':''}">${k.val}</div><div class="note" style="color:var(--accent-2)">${k.note}</div></div>`).join('');
+      } else {
+        kpiEl.innerHTML = `
+          <div class="kpi" style="grid-column:span 3; padding:16px 20px;">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:12px;">Cómo se llega al % de recompra</div>
+            <div style="display:flex;align-items:center;gap:0;flex-wrap:nowrap;overflow-x:auto;">
+
+              <div style="text-align:center;min-width:130px;">
+                <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Perfil seleccionado</div>
+                <div style="font-size:24px;font-weight:800;color:var(--ink);">${fmtN(g.n)}</div>
+                <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">usuarios en total</div>
+              </div>
+
+              <div style="flex:1;min-width:60px;text-align:center;padding:0 4px;">
+                <div style="font-size:10px;color:var(--muted);line-height:1.4;">${sinHorizonte > 0 ? `<b style="color:var(--accent-2)">−${fmtN(sinHorizonte)}</b><br>1er trip muy reciente,<br>no se puede medir aún` : 'todos medibles'}</div>
+                <div style="height:1px;background:var(--line);margin:6px 0;position:relative;">
+                  <span style="position:absolute;right:-4px;top:-5px;color:var(--muted);font-size:14px;">▶</span>
+                </div>
+              </div>
+
+              <div style="text-align:center;min-width:130px;">
+                <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Con ${hLbl} completos</div>
+                <div style="font-size:24px;font-weight:800;color:var(--ink);">${fmtN(g.elig)}</div>
+                <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">se puede medir si recompraron</div>
+              </div>
+
+              <div style="flex:1;min-width:60px;text-align:center;padding:0 4px;">
+                <div style="font-size:10px;color:var(--muted);line-height:1.4;"><b style="color:var(--muted)">−${fmtN(noRebuy)}</b><br>no recompraron<br>en esa ventana</div>
+                <div style="height:1px;background:var(--line);margin:6px 0;position:relative;">
+                  <span style="position:absolute;right:-4px;top:-5px;color:var(--muted);font-size:14px;">▶</span>
+                </div>
+              </div>
+
+              <div style="text-align:center;min-width:130px;">
+                <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Recompraron</div>
+                <div style="font-size:24px;font-weight:800;color:var(--accent);">${fmtN(g.rebuy)}</div>
+                <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">dentro de ${hLbl} desde su 1er trip</div>
+              </div>
+
+              <div style="flex:0;padding:0 12px;font-size:20px;color:var(--muted);">=</div>
+
+              <div style="text-align:center;min-width:100px;background:var(--panel-2);border-radius:8px;padding:10px 14px;border:1px solid var(--line);">
+                <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Tasa</div>
+                <div style="font-size:22px;font-weight:800;color:var(--accent);">${g.rate !== null ? fmtPct(g.rate*100) : '—'}</div>
+                <div style="font-size:10px;color:var(--muted);margin-top:2px;">${fmtN(g.rebuy)} ÷ ${fmtN(g.elig)}</div>
+              </div>
+
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    // Year chart
+    const yearMap = {};
+    filtered.forEach(r => {
+      if (!yearMap[r.year]) yearMap[r.year]={elig:0,rebuy:0};
+      yearMap[r.year].elig  +=getE(r);
+      yearMap[r.year].rebuy +=getR(r);
+    });
+    const yItems = Object.keys(yearMap).sort().map(y => {
+      const ag=yearMap[y];
+      const rate=ag.elig>0?ag.rebuy/ag.elig*100:0;
+      return { label:`${y} (${YEAR_LBL[y]})`, value:rate, valueLabel:fmtPct(rate) };
+    });
+    const cEl = document.getElementById('explYearChart');
+    if (cEl && yItems.length>0) verticalBarChart(cEl,yItems,{h:200,fmtY:v=>v.toFixed(0)+'%',maxV:Math.max(...yItems.map(d=>d.value),30)});
+    else if (cEl) cEl.innerHTML='<p style="color:var(--muted);font-size:12px;padding:8px">Sin datos para la selección actual.</p>';
+
+    // Breakdown table
+    const dimKey=(document.getElementById('explBreakdownDim')||{}).value||'pais';
+    const hdr=document.getElementById('explBreakdownHeader');
+    if (hdr) hdr.textContent=DIM_NAMES[dimKey]||dimKey;
+    const brkMap={};
+    filtered.forEach(r => {
+      let k=r[dimKey];
+      if (DIM_LBL[dimKey]) k=DIM_LBL[dimKey][k]||k;
+      if (!brkMap[k]) brkMap[k]={n:0,elig:0,rebuy:0};
+      brkMap[k].n+=r.n; brkMap[k].elig+=getE(r); brkMap[k].rebuy+=getR(r);
+    });
+    const brkRows=Object.entries(brkMap)
+      .map(([seg,ag])=>({seg,n:ag.n,elig:ag.elig,rebuy:ag.rebuy,rate:ag.elig>0?ag.rebuy/ag.elig:null}))
+      .sort((a,b)=>(b.rate??-1)-(a.rate??-1));
+    const tbody=document.getElementById('explBreakdownBody');
+    if (tbody) tbody.innerHTML=brkRows.map(r=>{
+      const diff=(r.rate!==null&&g.rate!==null)?(r.rate-g.rate)*100:null;
+      const cls=diff===null?'':(diff>0.5?'style="color:var(--good)"':diff<-0.5?'style="color:var(--bad)"':'');
+      return `<tr><td>${r.seg}</td><td class="num">${fmtN(r.n)}</td><td class="num">${r.rate!==null?fmtPct(r.rate*100):'—'}</td><td class="num" ${cls}>${diff!==null?(diff>0?'+':'')+diff.toFixed(1)+' pp':'—'}</td></tr>`;
+    }).join('');
+
+    // Filter description
+    const descEl=document.getElementById('explFilterDesc');
+    if (descEl) {
+      const parts=[];
+      if (state.year)        parts.push(`Año: ${state.year}`);
+      if (state.month)       parts.push(`Mes: ${MONTH_NAMES[+state.month]}`);
+      if (state.destino_t1)  parts.push(`Destino T1: ${state.destino_t1}`);
+      if (state.destino_t2)  parts.push(`Destino T2: ${state.destino_t2}`);
+      if (state.pais)        parts.push(`País: ${state.pais}`);
+      if (state.producto_t1) parts.push(`Prod. trip 1: ${state.producto_t1}`);
+      if (state.producto_t2) parts.push(`Prod. trip 2: ${state.producto_t2}`);
+      if (state.plataforma)  parts.push(`Plataforma: ${state.plataforma}`);
+      if (state.canal)       parts.push(`Canal: ${state.canal}`);
+      if (state.flg_app)     parts.push(`App: ${state.flg_app==='1'?'Con App':'Sin App'}`);
+      if (state.flg_puntos)  parts.push(`Puntos: ${state.flg_puntos==='1'?'Con puntos':'Sin puntos'}`);
+      if (state.rebuy)       parts.push(`Recompra: ${state.rebuy==='1'?'Recompró':'No recompró'}`);
+      if (state.n_trx)       parts.push(`Trx: ${state.n_trx}`);
+      if (state.tipo_viaje)  parts.push(`Tipo viaje: ${state.tipo_viaje}`);
+      if (parts.length > 0) {
+        descEl.innerHTML = parts.map(p=>`<span style="background:var(--accent);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap;">${p}</span>`).join('');
+      } else {
+        descEl.innerHTML = '<span style="color:var(--muted);font-style:italic;font-size:12px;">Sin filtros activos — viendo el universo completo</span>';
+      }
+    }
+
+    // ── Recomendaciones ────────────────────────────────────────────────────
+    const recEl = document.getElementById('explRecCards');
+    if (!recEl) return;
+
+    const imp = {};
+    ((DATA.modeling||{}).gbm||{}).permutation_importance && DATA.modeling.gbm.permutation_importance.forEach(d => { imp[d.feature] = d.importance; });
+
+    function rateOf(rs, flagKey, val) {
+      const total = rs.reduce((s,r)=>s+r.n, 0);
+      if (!total) return 0;
+      return rs.filter(r=>r[flagKey]===val).reduce((s,r)=>s+r.n,0) / total;
+    }
+    const globalN = rows.reduce((s,r)=>s+r.n,0);
+
+    // dir:'pos' → oportunidad cuando el segmento tiene MENOS del atributo bueno (gap = glob - grp)
+    // dir:'neg' → oportunidad cuando el segmento tiene MÁS del atributo malo  (gap = grp - glob)
+    const LEVERS_DEF = [
+      { id:'app', cubeKey:'flg_app', activeVal:'1', feature:'flg_app_90d_antes_trip1', dir:'pos',
+        name:'Activar App antes del próximo viaje',
+        mkRec:(grp,glob)=>({
+          signal:`Solo el <b>${fmtPct(grp*100)}</b> de este segmento tenía App activa en los 90 días previos al T1, frente al <b>${fmtPct(glob*100)}</b> global (brecha de <b>${((glob-grp)*100).toFixed(0)} pp</b>). El uso de App es el predictor con mayor importancia en el modelo — la señal es monótona: a más visitas de App, mayor tasa de recompra.`,
+          action:`Campaña de descarga y activación dirigida al segmento: push/email con deeplink a una oferta del destino más reservado por este grupo. Incluir beneficio concreto y exclusivo para nuevos usuarios de App (precio garantizado, descuento por pago in-app, acceso anticipado a deals). Timing sugerido: dentro de los 15 días post-trip 1, cuando la experiencia del viaje está fresca.`,
+          experiment:`A/B test: email con CTA de descarga de App + beneficio exclusivo vs. email de seguimiento estándar sin mención de App. KPI primario: descarga en 7 días. KPI secundario: rebuy a 3 y 6 meses. Tamaño mínimo: 5.000 usuarios por brazo.`,
+        })
+      },
+      { id:'puntos', cubeKey:'flg_puntos', activeVal:'1', feature:'flg_uso_puntos', dir:'pos',
+        name:'Incorporar al programa Despegar+',
+        mkRec:(grp,glob)=>({
+          signal:`El <b>${fmtPct(grp*100)}</b> del segmento usa puntos, vs. <b>${fmtPct(glob*100)}</b> global. Loyalty es el factor con mayor lift observado en el análisis descriptivo: los tiers superiores alcanzan tasas de recompra 2–3× la media general. La relación es bidireccional (el tier se gana viajando), por lo que conviene actuar temprano.`,
+          action:`Email de bienvenida a Despegar+ con bono de puntos en la primera redención. Personalizar el mensaje con los puntos ya acumulados en el trip 1 y cuánto representan en descuento para el próximo viaje. Reforzar con recordatorio 30 días antes de que expiren los puntos si no usaron el bono.`,
+          experiment:`A/B test: oferta de bono de enrollment (puntos extra garantizados) vs. comunicación educativa de beneficios del programa. KPI: tasa de enrollment en 30 días + rebuy a 6 meses. Importante: analizar si el efecto es causal o de selección (usuarios propensos a recomprar se enrolan solos).`,
+        })
+      },
+      { id:'multitrx', cubeKey:'n_trx', activeVal:'1', feature:'n_transacciones_trip1', dir:'neg',
+        name:'Estimular cross-sell en el mismo viaje',
+        mkRec:(grp,glob)=>({
+          signal:`El <b>${fmtPct(grp*100)}</b> del segmento reservó solo 1 producto en el trip 1 (vs. <b>${fmtPct(glob*100)}</b> global). Usuarios con 2 o más productos en el mismo trip recompran a una tasa notablemente más alta. Hipótesis: el cross-sell "abre un segundo vertical" en la mente del cliente y aumenta el número de casos de uso percibidos.`,
+          action:`Secuencia de nudges post-compra para agregar producto complementario: hotel si solo tiene vuelo, actividad o traslado si ya tiene vuelo + hotel. Usar urgencia decreciente: oferta de 48h post-reserva, reminder a 7 días, y última oportunidad a 14 días antes del viaje. El canal óptimo depende del perfil: App para usuarios que la tienen, email para el resto.`,
+          experiment:`A/B test: secuencia de nudges cross-sell automáticos (48h / 7d / 14d pre-viaje) vs. sin intervención. KPI: attach rate del producto sugerido + rebuy a 6 meses. Validar si el efecto se mantiene cuando se controla por intent previo (el usuario que ya tenía intención de agregar el producto).`,
+        })
+      },
+      { id:'canal_meta', cubeKey:'canal', activeVal:'Metabuscadores', feature:'canal_principal', dir:'neg',
+        name:'Journey CRM diferenciado para captados por metabuscador',
+        mkRec:(grp,glob)=>({
+          signal:`El <b>${fmtPct(grp*100)}</b> del segmento llegó por metabuscador (vs. <b>${fmtPct(glob*100)}</b> global). El canal de metabuscadores concentra el perfil más price-driven y registra la tasa de recompra observada más baja entre todos los canales. El riesgo es que estos usuarios comparan precios en cada viaje y no fidelizan por default.`,
+          action:`Journey CRM post-T1 centrado en precio y ahorro: email con deal de precio garantizado + comparativa explícita de ahorro vs. booking en otros canales. Mensaje eje: "La primera vez reservaste bien — así podés ahorrar aún más en el próximo". Timing: 30d, 60d, 90d post-trip. Complementar con alerta de precio para el destino del trip 1.`,
+          experiment:`A/B test: journey CRM precio-centrado vs. CRM estándar para usuarios captados por metabuscador. KPI: open rate + click-to-book + rebuy a 6 meses. Analizar si el ahorro percibido supera el costo de margen del deal.`,
+        })
+      },
+    ];
+
+    const scored = LEVERS_DEF.map(lv => {
+      const grpRate  = rateOf(filtered, lv.cubeKey, lv.activeVal);
+      const globRate = rows.filter(r=>r[lv.cubeKey]===lv.activeVal).reduce((s,r)=>s+r.n,0) / (globalN||1);
+      const gap      = lv.dir==='pos' ? Math.max(0, globRate - grpRate) : Math.max(0, grpRate - globRate);
+      const importance = imp[lv.feature] || 0.01;
+      return { ...lv, grpRate, globRate, gap, importance, score: gap * importance };
+    }).sort((a,b) => b.score - a.score);
+
+    // Cross-sell basado en producto dominante del segmento
+    const t1Map = {};
+    filtered.forEach(r => { t1Map[r.producto_t1] = (t1Map[r.producto_t1]||0) + r.n; });
+    const dominantT1 = Object.entries(t1Map).sort((a,b)=>b[1]-a[1])[0]?.[0] || '';
+    const CROSSELL_MAP = {
+      'Vuelos':['Hotel en el destino del trip 1','El destino ya lo eligieron — el hotel es el paso natural siguiente.'],
+      'Hoteles':['Vuelo a un nuevo destino','Ya tienen alojamiento como hábito — proponerles explorar un nuevo destino con vuelo incluido.'],
+      'Carrito':['Actividades o experiencias en destino','Ya compraron el viaje completo — agregar experiencias aumenta el valor percibido del viaje.'],
+      'Actividades':['Paquete vuelo + hotel','Las actividades son complementarias — proponerles armar el viaje completo.'],
+      'Autos':['Hotel en el mismo destino','Los conductores ya se trasladaron — el hotel es el complemento lógico.'],
+      'Traslados':['Vuelos al mismo destino o cercano','Los traslados indican intent de viaje — proponer vuelo para el próximo.'],
+    };
+    const crossellInfo = CROSSELL_MAP[dominantT1] || ['Paquete personalizado','Basado en el perfil del segmento.'];
+
+    // Diagnóstico del segmento
+    const rebuyRate = g.rate !== null ? g.rate : 0;
+    const segColor = g.rate===null ? 'var(--muted)' : rebuyRate>=0.30 ? 'var(--good)' : rebuyRate>=0.18 ? 'var(--accent)' : 'var(--bad)';
+    const segLabel = g.rate===null ? 'Sin datos suficientes' : rebuyRate>=0.30 ? 'Alto potencial de recompra' : rebuyRate>=0.18 ? 'Potencial de recompra medio' : 'Bajo potencial de recompra';
+    const globalRate = rows.reduce((s,r)=>s+getE(r),0) > 0 ? rows.reduce((s,r)=>s+getR(r),0) / rows.reduce((s,r)=>s+getE(r),0) : null;
+    const vsDiff = (g.rate!==null && globalRate!==null) ? ((g.rate - globalRate)*100).toFixed(1) : null;
+    const vsText = vsDiff!==null ? (vsDiff>0 ? `+${vsDiff} pp vs. promedio global` : `${vsDiff} pp vs. promedio global`) : '';
+    const vsColor = vsDiff!==null ? (vsDiff>=0 ? 'var(--good)' : 'var(--bad)') : 'var(--muted)';
+
+    const cards = [];
+
+    // Tarjeta de diagnóstico
+    cards.push(`
+      <div style="background:var(--panel-2);border:2px solid ${segColor};border-radius:8px;padding:14px 16px;grid-column:1/-1;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
+          <span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:${segColor};background:${segColor}18;padding:3px 10px;border-radius:999px;">${segLabel}</span>
+          ${vsDiff!==null?`<span style="font-size:11px;font-weight:700;color:${vsColor};">${vsText}</span>`:''}
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;font-size:12px;">
+          <div><div style="color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:3px;">Usuarios en segmento</div><b style="font-size:16px;">${fmtN(g.n)}</b></div>
+          <div><div style="color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:3px;">Tasa de recompra</div><b style="font-size:16px;color:${segColor};">${g.rate!==null?fmtPct(g.rate*100):'—'}</b></div>
+          ${dominantT1?`<div><div style="color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:3px;">Producto dominante T1</div><b style="font-size:14px;">${dominantT1}</b></div>`:''}
+          <div><div style="color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:3px;">Cross-sell sugerido</div><b style="font-size:13px;">${crossellInfo[0]}</b><div style="color:var(--muted);font-size:10.5px;margin-top:2px;">${crossellInfo[1]}</div></div>
+        </div>
+      </div>`);
+
+    // Palancas priorizadas (top 4 con brecha > 0.5 pp)
+    const activeLvs = scored.filter(lv => lv.gap > 0.005);
+    if (activeLvs.length === 0) {
+      cards.push(`<div style="grid-column:1/-1;padding:16px;text-align:center;color:var(--muted);font-size:12px;">Este segmento ya tiene adopción de App, Loyalty y cross-sell similar al promedio global. No hay palancas diferenciales claras — considerá probar una oferta de reactivación de precio.</div>`);
+    }
+    activeLvs.slice(0,4).forEach((lv, i) => {
+      const rec = lv.mkRec(lv.grpRate, lv.globRate);
+      const gapPp = (lv.gap * 100).toFixed(1);
+      const priorityColor = i===0 ? 'var(--accent)' : i===1 ? 'var(--accent-2)' : 'var(--muted)';
+      cards.push(`
+        <div style="background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden;">
+          <div style="background:${priorityColor};padding:8px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#fff;">Palanca ${i+1}</span>
+            <span style="font-size:10px;font-weight:700;color:#fff;opacity:.85;">Brecha ${gapPp} pp</span>
+          </div>
+          <div style="padding:14px 16px;">
+            <div style="font-size:13.5px;font-weight:700;margin-bottom:12px;">${lv.name}</div>
+            <div style="margin-bottom:10px;">
+              <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:4px;">Señal observada</div>
+              <div style="font-size:12px;line-height:1.6;color:var(--ink);">${rec.signal}</div>
+            </div>
+            <div style="margin-bottom:10px;">
+              <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:4px;">Acción sugerida</div>
+              <div style="font-size:12px;line-height:1.6;color:var(--ink);">${rec.action}</div>
+            </div>
+            <div style="background:var(--panel-2);border-radius:6px;padding:10px 12px;">
+              <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:4px;">Experimento sugerido</div>
+              <div style="font-size:11.5px;line-height:1.6;color:var(--ink);">${rec.experiment}</div>
+            </div>
+          </div>
+        </div>`);
+    });
+
+    recEl.style.gridTemplateColumns = 'repeat(auto-fill,minmax(340px,1fr))';
+    recEl.innerHTML = cards.join('');
+  }
+
+  sec._renderExpl = render;
+
+
+
+  // Wire toggle button groups (year también actualiza semanas disponibles)
+  function wireToggle(containerId, stateKey, onchange) {
+    document.querySelectorAll(`#${containerId} .seg-btn`).forEach(b => {
+      b.onclick = () => {
+        document.querySelectorAll(`#${containerId} .seg-btn`).forEach(x => x.classList.toggle('active', x===b));
+        state[stateKey] = b.dataset.val;
+        if (onchange) onchange();
+        render();
+      };
+    });
+  }
+  wireToggle('expl-year',   'year');
+  wireToggle('expl-app',    'flg_app');
+  wireToggle('expl-puntos', 'flg_puntos');
+  wireToggle('expl-rebuy',  'rebuy');
+  wireToggle('expl-ntrx',   'n_trx');
+
+  // Wire dropdowns
+  [['expl-pais','pais'],['expl-producto','producto_t1'],['expl-producto-t2','producto_t2'],['expl-plataforma','plataforma'],['expl-canal','canal'],['expl-tipoviaje','tipo_viaje'],['expl-destino-t1','destino_t1'],['expl-destino-t2','destino_t2']].forEach(([id,key]) => {
+    const el=document.getElementById(id);
+    if (el) el.addEventListener('change',()=>{ state[key]=el.value; render(); });
+  });
+  const monthEl=document.getElementById('expl-month');
+  if (monthEl) monthEl.addEventListener('change',()=>{ state.month=monthEl.value; render(); });
+
+  // Breakdown dimension change
+  const brkSel=document.getElementById('explBreakdownDim');
+  if (brkSel) brkSel.addEventListener('change', render);
+
+  // Reset button
+  const resetBtn=document.getElementById('explResetBtn');
+  if (resetBtn) resetBtn.onclick=()=>{
+    Object.keys(state).forEach(k=>state[k]='');
+    ['expl-year','expl-app','expl-puntos','expl-rebuy','expl-ntrx'].forEach(id=>{
+      document.querySelectorAll(`#${id} .seg-btn`).forEach((b,i)=>b.classList.toggle('active',i===0));
+    });
+    [['expl-pais'],['expl-producto'],['expl-producto-t2'],['expl-plataforma'],['expl-canal'],['expl-tipoviaje'],['expl-month'],['expl-destino-t1'],['expl-destino-t2']].forEach(([id])=>{ const el=document.getElementById(id); if(el) el.value=''; });
+    render();
+  };
+
+  render();
+}
+
+function buildCohortesPaisPuntos() {
+  const raw = DATA.descriptive.cohortesPaisPuntos;
+  if (!raw || !raw.pais) { return; }
+  const n = raw.pais.length;
+  const rows = [];
+  for (let i = 0; i < n; i++) {
+    rows.push({
+      year: raw.cohort_year[i], pais: raw.pais[i], puntos: raw.uso_puntos[i],
+      n_usuarios: raw.n_usuarios[i], n_elegibles: raw.n_elegibles[i], n_rebuy: raw.n_rebuy[i],
+      rate: raw.n_elegibles[i] > 0 ? raw.n_rebuy[i] / raw.n_elegibles[i] : null
+    });
+  }
+  const paises = [...new Set(rows.map(r => r.pais))].sort();
+  const sel = document.getElementById('cpPaisSelect');
+  if (!sel) return;
+  if (sel.dataset.initialized) { render(); return; }
+  sel.dataset.initialized = '1';
+  sel.innerHTML = '<option value="">Todos</option>' + paises.map(p => `<option value="${p}">${p}</option>`).join('');
+  let selPais = '', selPuntos = '';
+  function render() {
+    let filtered = rows;
+    if (selPais) filtered = filtered.filter(r => r.pais === selPais);
+    if (selPuntos) filtered = filtered.filter(r => r.puntos === selPuntos);
+    const byYear = {};
+    filtered.forEach(r => {
+      if (!byYear[r.year]) byYear[r.year] = {n_elegibles: 0, n_rebuy: 0};
+      byYear[r.year].n_elegibles += r.n_elegibles;
+      byYear[r.year].n_rebuy += r.n_rebuy;
+    });
+    const years = Object.keys(byYear).sort();
+    const chartItems = years.map(y => ({
+      label: String(y),
+      value: byYear[y].n_elegibles > 0 ? byYear[y].n_rebuy / byYear[y].n_elegibles * 100 : 0,
+      valueLabel: byYear[y].n_elegibles > 0 ? fmtPct(byYear[y].n_rebuy / byYear[y].n_elegibles * 100) : '—'
+    }));
+    const chart = document.getElementById('cpChart');
+    if (chart) verticalBarChart(chart, chartItems, {h: 200, fmtY: v => v.toFixed(0) + '%', maxV: Math.max(...chartItems.map(d => d.value), 30)});
+    const tbody = document.getElementById('cpTableBody');
+    if (tbody) tbody.innerHTML = filtered
+      .sort((a, b) => a.year - b.year || a.pais.localeCompare(b.pais) || a.puntos.localeCompare(b.puntos))
+      .map(r => `<tr><td>${r.year}</td><td>${r.pais}</td><td>${r.puntos}</td><td class="num">${fmtN(r.n_usuarios)}</td><td class="num">${fmtN(r.n_elegibles)}</td><td class="num">${fmtN(r.n_rebuy)}</td><td class="num">${fmtPct(r.rate ? r.rate * 100 : null)}</td></tr>`).join('');
+  }
+  sel.addEventListener('change', () => { selPais = sel.value; render(); });
+  document.querySelectorAll('#cpPuntosBtns .seg-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('#cpPuntosBtns .seg-btn').forEach(x => x.classList.toggle('active', x === b));
+      selPuntos = b.dataset.puntos; render();
+    });
+  });
+  render();
+}
+
+function buildEjecutivo() {
+  const d = DATA.descriptive;
+  const mdl = DATA.modeling;
+  const stdH = d.standard_horizon || 18;
+
+  // KPI cards
+  const wrap = document.getElementById('execKpis');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  d.kpis_por_horizonte.forEach(k => {
+    wrap.appendChild(kpiCard(`Recompra ${k.horizon}m`, fmtPct(k.rate * 100), `${fmtN(k.n_eligible)} con ≥${k.horizon}m desde 1er trip`));
+  });
+  wrap.appendChild(kpiCard('ROC-AUC modelo', mdl.gbm.metrics.roc_auc.toFixed(3), 'GBM out-of-time'));
+  wrap.appendChild(kpiCard('Universo 2022–2026', fmtN(d.kpis_generales.n_total), 'Excluye pandemia'));
+
+  // Trend chart from cohortes_por_mes_estandar
+  const cohortData = d.cohortes_por_mes_estandar || [];
+  const trendEl = document.getElementById('execTrendChart');
+  if (trendEl && cohortData.length > 0) {
+    const labels = cohortData.map(r => String(r.cohort_month).substring(0, 7));
+    const barVals = cohortData.map(r => r.n || 0);
+    const lineVals = cohortData.map(r => r.n_elig > 0 ? r.n_rebuy / r.n_elig * 100 : null);
+    lineWithBars(trendEl, labels, barVals, lineVals, {
+      h: 220, barLabel: 'Usuarios', lineLabel: `Tasa ${stdH}m (%)`
+    });
+  }
+
+  // Drivers chart (top 10 permutation importance)
+  const imps = ((mdl.gbm || {}).permutation_importance || []).slice(0, 10);
+  const driverEl = document.getElementById('execDriversChart');
+  if (driverEl && imps.length > 0) {
+    const maxImp = Math.max(...imps.map(i => i.importance));
+    horizontalBarChart(driverEl, imps.map(i => ({
+      label: i.feature, value: i.importance, valueLabel: i.importance.toFixed(4)
+    })), {labelW: 220, maxV: maxImp});
+  }
+
+  // Condensed insights
+  const stdRate = d.kpis_por_horizonte.find(k => k.horizon === stdH).rate * 100;
+  const rApp0 = (d.por_app_antes.rows || []).find(r => r.categoria === 0);
+  const rApp1 = (d.por_app_antes.rows || []).find(r => r.categoria === 1);
+  document.getElementById('execInsights').innerHTML = `<ul class="insight-list">
+    <li><b>Tasa de recompra a ${stdH}m: ${fmtPct(stdRate)}</b> sobre cohortes maduras 2022–2026. Sube a ${fmtPct(d.kpis_por_horizonte.find(k=>k.horizon===36).rate*100)} a 36 meses.</li>
+    <li><b>Loyalty tier: señal más fuerte observada</b> — los tiers superiores muestran tasas 2–3× la media. La relación es bidireccional (el tier se gana viajando). Hipótesis a testear: anticipar beneficios de tier para clientes nuevos de alto potencial.</li>
+    <li><b>App antes del primer trip: señal con dosis-respuesta clara</b> — sin uso de App ${fmtPct(rApp0?.rate*100)}, con uso ${fmtPct(rApp1?.rate*100)}, y monotónicamente creciente con la cantidad de visitas. El modelo confirma la señal controlando por año.</li>
+    <li><b>Múltiples transacciones en el trip1</b> — reservar más de un producto en el mismo trip se asocia fuertemente con recompra. Hipótesis: el cross-sell "abre un nuevo vertical" en la mente del cliente.</li>
+    <li><b>Metabuscadores: canal con menor recompra observada</b> — perfil más price-driven. Oportunidad de enriquecer el journey post-adquisición con activaciones CRM diferenciadas.</li>
+    <li><b>Poder predictivo moderado (ROC-AUC ${mdl.gbm.metrics.roc_auc.toFixed(3)})</b> — el comportamiento en el primer trip ayuda a identificar perfiles de mayor propensión, pero está lejos de determinar individualmente quién va a recomprar. Evaluado out-of-time en cohortes ${mdl.poblacion.cutoff_month}+.</li>
+  </ul>`;
+
+  // Action cards
+  document.getElementById('execAcciones').innerHTML = `<div style="display:grid; gap:12px;">
+    ${[
+      {title:'Activación de App post-primer-trip', desc:'Diseñar experimento A/B de engagement en App post-compra. La correlación App↔recompra es fuerte y monótona, pero no hay causalidad probada — el experimento es el paso natural.'},
+      {title:'Accelerar acceso a tier de Loyalty para perfiles de alto potencial', desc:'La asociación tier↔recompra es la más fuerte del análisis. Testear si adelantar beneficios de tier a clientes nuevos genera recompra incremental.'},
+      {title:'Fomentar cross-sell en el primer trip', desc:'Reservar más de un producto en el primer trip se asocia fuertemente con recompra. A/B test de ofertas de cross-sell en el funnel del primer trip.'},
+      {title:'Journey diferenciado para adquisición via Metabuscadores', desc:'El canal con menor recompra observada. Evaluar activaciones CRM post-adquisición específicas para este origen.'}
+    ].map(a => `<div style="padding:12px; background:var(--panel-2); border-radius:8px; border:1px solid var(--line);">
+      <div style="font-weight:700; font-size:13.5px; margin-bottom:4px;">${a.title}</div>
+      <div style="font-size:12.5px; color:var(--muted);">${a.desc}</div>
+    </div>`).join('')}
+  </div>`;
+}
+
+function buildKpis() {
+  const d = DATA.descriptive;
+  const wrap = document.getElementById('kpis');
+  wrap.innerHTML='';
+  const total = d.kpis_generales.n_total;
+  d.kpis_por_horizonte.forEach(k => {
+    const card = document.createElement('div');
+    card.className = 'kpi';
+    card.style.cssText = 'min-height:120px; display:flex; flex-direction:column; justify-content:center;';
+    card.innerHTML = `
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:4px;">Recompra a ${k.horizon}m</div>
+      <div style="font-size:30px;font-weight:800;color:var(--accent);line-height:1;">${fmtPct(k.rate*100)}</div>
+      <div style="font-size:10.5px;color:var(--muted);line-height:1.45;margin-top:6px;">
+        volvió a comprar <b style="color:var(--ink)">dentro de los ${k.horizon} meses</b> siguientes a su 1er trip
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-top:5px;border-top:1px dashed var(--line);padding-top:5px;">
+        Base: ${fmtN(k.n_eligible)} usuarios cuyo 1er trip fue hace ≥${k.horizon}m
+      </div>
+    `;
+    wrap.appendChild(card);
+  });
+  wrap.appendChild(kpiCard('Mediana días a recompra', fmtN(d.kpis_generales.mediana_dias_a_recompra)+' días', 'Entre quienes recompraron, cualquier plazo'));
+  wrap.appendChild(kpiCard('Usuarios primer trip', fmtN(d.kpis_generales.n_total), 'Universo 2022–2026 (excluye pandemia)'));
+  buildUniversoPanel();
+}
+
+function buildUniversoPanel() {
+  const d = DATA.descriptive;
+  const body = document.getElementById('universoBody');
+  if (!body) return;
+
+  const ks = d.kpis_por_horizonte;
+  // incrementos entre horizontes consecutivos
+  const segments = ks.map((k, i) => ({
+    horizon: k.horizon,
+    rate: k.rate,
+    inc: i === 0 ? k.rate : k.rate - ks[i-1].rate,
+    label: i === 0 ? `mes 1–${k.horizon}` : `mes ${ks[i-1].horizon+1}–${k.horizon}`
+  }));
+  const maxRate = ks[ks.length - 1].rate;
+  const neverRate = 1 - maxRate;
+
+  const colors = ['#1f6f78','#2e8f99','#47aab5','#6bc4cc','#97d9df'];
+  const colorNever = 'var(--line)';
+
+  // Barra acumulativa única
+  const W = 640, H = 52, LH = 22; // barra height, label height
+  let x = 0;
+  let bars = '', labels = '', ticks = '';
+
+  segments.forEach((s, i) => {
+    const w = s.inc * W;
+    bars += `<rect x="${x}" y="0" width="${w}" height="${H}" fill="${colors[i]}"/>`;
+    // tick + label debajo
+    const cx = x + w / 2;
+    if (w > 28) {
+      labels += `<text x="${cx}" y="${H + 14}" text-anchor="middle" font-size="10" fill="${colors[i]}" font-weight="700">+${fmtPct(s.inc*100)}</text>`;
+      labels += `<text x="${cx}" y="${H + 25}" text-anchor="middle" font-size="9" fill="var(--muted)">${s.label}</text>`;
+    }
+    x += w;
+  });
+
+  // segmento "nunca"
+  const wNever = neverRate * W;
+  bars += `<rect x="${x}" y="0" width="${wNever}" height="${H}" fill="${colorNever}" rx="0 2 2 0"/>`;
+  const cxNever = x + wNever / 2;
+  labels += `<text x="${cxNever}" y="${H + 14}" text-anchor="middle" font-size="10" fill="var(--muted)" font-weight="700">${fmtPct(neverRate*100)}</text>`;
+  labels += `<text x="${cxNever}" y="${H + 25}" text-anchor="middle" font-size="9" fill="var(--muted)">nunca (en 36m)</text>`;
+
+  // líneas de acumulado arriba de la barra
+  let cumX = 0;
+  segments.forEach((s, i) => {
+    cumX += s.inc * W;
+    ticks += `<line x1="${cumX}" y1="-18" x2="${cumX}" y2="${H}" stroke="white" stroke-width="1.5" stroke-dasharray="3,2"/>`;
+    ticks += `<text x="${cumX}" y="-22" text-anchor="middle" font-size="10.5" font-weight="800" fill="${colors[i]}">${fmtPct(s.rate*100)}</text>`;
+    ticks += `<text x="${cumX}" y="-10" text-anchor="middle" font-size="9" fill="var(--muted)">a ${s.horizon}m</text>`;
+  });
+
+  const svgH = H + 60;
+  body.innerHTML = `
+    <p style="font-size:12.5px;color:var(--muted);margin:0 0 16px;line-height:1.5;">
+      <b style="color:var(--ink)">Cómo leer esto:</b> cada color es un grupo <i>adicional</i> que se suma al anterior.
+      El % a 12m incluye a todos los del 6m <b>más</b> los que tardaron entre 7 y 12 meses en volver.
+      Por eso el número siempre crece con el horizonte — es acumulativo.
+    </p>
+    <svg viewBox="-4 -30 ${W+8} ${svgH}" style="width:100%;max-width:${W}px;display:block;overflow:visible;">
+      ${bars}
+      ${ticks}
+      ${labels}
+    </svg>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:11px;color:var(--muted);">
+      ${segments.map((s,i) => `<span><span style="display:inline-block;width:10px;height:10px;background:${colors[i]};border-radius:2px;margin-right:4px;vertical-align:middle;"></span>${s.label}</span>`).join('')}
+      <span><span style="display:inline-block;width:10px;height:10px;background:var(--line);border-radius:2px;margin-right:4px;vertical-align:middle;"></span>nunca recompró</span>
+    </div>
+  `;
+}
+
+function buildCalidad() {
+  const d = DATA.descriptive;
+  const contam = d.contaminacion_app_90d_post;
+  document.getElementById('calidadBody').innerHTML = `
+    <div class="row2">
+      <div>
+        <table>
+          <tr><td>Usuarios (COUNT DISTINCT social_id)</td><td class="num">${fmtN(d.kpis_generales.n_total)}</td></tr>
+          <tr><td>Con 1 solo trip (hasta el corte de datos)</td><td class="num">${fmtN(d.kpis_generales.n_total - d.kpis_generales.n_rebuy_ever)}</td></tr>
+          <tr><td>Con 2 o más trips (dentro de 36 meses)</td><td class="num">${fmtN(d.kpis_generales.n_rebuy_ever)}</td></tr>
+          <tr><td>% recompra histórica (sesgada, sin ajustar por tiempo de exposición)</td><td class="num">${fmtPct(d.kpis_generales.rate_ever*100)}</td></tr>
+          <tr><td>Filas descartadas por corrupción de CSV (afecta ~0.03% de usuarios, todos con 2ª transacción)</td><td class="num">3.427</td></tr>
+          <tr><td>Contaminación de ventana App 90d post-trip1 (recompraron antes de esos 90 días)</td><td class="num">${fmtPct(contam.pct_contaminados*100)} de los recompradores</td></tr>
+        </table>
+      </div>
+      <div>
+        <table>
+          <tr><td>Cobertura Payments</td><td class="num">~97.5%</td><td><span class="pill ok">estable</span></td></tr>
+          <tr><td>Cobertura margen/NPV</td><td class="num">100% NULL en 2019</td><td><span class="pill warn">solo 2020+</span></td></tr>
+          <tr><td>Cobertura path de medios / first-last click</td><td class="num">0% en 2019-2020</td><td><span class="pill warn">solo 2021+</span></td></tr>
+          <tr><td>Cobertura Customer Service</td><td class="num">~0% hasta 2023, 4.6-6.5% desde 2024</td><td><span class="pill warn">solo 2024+, descriptivo</span></td></tr>
+          <tr><td>Uso de puntos loyalty (incidencia)</td><td class="num">0.02% (2019) → 9% (2026)</td><td><span class="pill na">tendencia, no solo cobertura</span></td></tr>
+          <tr><td>Uso de App antes de trip1 (incidencia)</td><td class="num">18% (2019) → 57% (2025)</td><td><span class="pill na">controlar por cohort_year</span></td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="caveat">
+      <b>Grano de la tabla:</b> social_id + nro_trip + trip_id + transaction_code + producto. Una transacción puede tener más de una fila
+      (multi-producto): 17,62M transaction_code distintos con un promedio de 1,23 filas por transacción (máx. 12). Se verificó que
+      economics/loyalty/payments/CS/cupón son 100% constantes dentro de un mismo transaction_code, y que App/actividad-entre-trips son
+      100% constantes dentro de un mismo social_id — por eso deduplicar por esas claves antes de agregar es seguro y no pierde información.
+      Ver <a href="diccionario_variables.md" target="_blank">diccionario de variables</a> para el detalle de cada campo.
+    </div>
+  `;
+}
+
+function buildInsights() {
+  const d = DATA.descriptive;
+  const mdl = DATA.modeling;
+  const appRate = d.por_app_antes.rows;
+  const rApp1 = appRate.find(r=>r.categoria===1), rApp0 = appRate.find(r=>r.categoria===0);
+  const tier = d.por_tier_loyalty.rows;
+  const stdH = d.standard_horizon || 18;
+  const stdRate = d.kpis_por_horizonte.find(k=>k.horizon===stdH).rate*100;
+  const html = `<ol class="insight-list">
+    <li><b>La tasa de recompra a ${stdH} meses (estándar) es ${fmtPct(stdRate)}</b> sobre cohortes maduras; a 36 meses sube a ${fmtPct(d.kpis_por_horizonte.find(k=>k.horizon===36).rate*100)}. Son números descriptivos: cada horizonte se calculó solo sobre usuarios con tiempo de observación completo para ese plazo.</li>
+    <li><b>El tier de Loyalty muestra la asociación más fuerte de todo el análisis</b>: entre quienes redimieron puntos en su 1er trip, el tier "3-Global" está asociado a ${fmtPct(tier[0]?.rate*100)} de recompra a ${stdH} meses, "2-Explorador" a ${fmtPct(tier[1]?.rate*100)}, y "1-Viajero" a ${fmtPct(tier[2]?.rate*100)} — todos muy por encima del ${fmtPct(stdRate)} general. <b>Ojo con la causalidad inversa:</b> el tier se gana viajando/gastando más, así que parte de esta asociación probablemente refleja que ya eran viajeros frecuentes, no que el tier "genere" recompra.</li>
+    <li><b>Uso de App antes del 1er trip: asociación clara y con dosis-respuesta monótona.</b> Sin visitas previas, ${fmtPct(rApp0?.rate*100)} de recompra; con 1 visita ${fmtPct(d.bin_visitas_app_antes.rows[1]?.rate*100)}; con 16+ visitas, ${fmtPct(d.bin_visitas_app_antes.rows[5]?.rate*100)}. La incidencia de uso de App creció fuertemente en el tiempo (18%→57% entre 2019 y 2025), por lo que esta señal se evaluó también dentro del modelo multivariado controlando por año de cohorte.</li>
+    <li><b>El gasto del 1er trip (gross bookings) tiene una relación en forma de U, no lineal:</b> tanto trips de muy poco gasto (&lt;100 USD, ${fmtPct(d.bin_gross_bookings.rows[0]?.rate*100)}) como muy grandes (2500+ USD, ${fmtPct(d.bin_gross_bookings.rows[5]?.rate*100)}) muestran más recompra que el rango medio (500-1000 USD, ${fmtPct(d.bin_gross_bookings.rows[3]?.rate*100)}). No es un simple "a mayor gasto, mayor lealtad".</li>
+    <li><b>Reservar más de una transacción dentro del 1er trip es una de las señales más fuertes</b> (pedido de Matías): 1 transacción → ${fmtPct(d.por_n_transacciones_trip1.rows.find(r=>r.categoria==='1 transacción')?.rate*100)}, 2 → ${fmtPct(d.por_n_transacciones_trip1.rows.find(r=>r.categoria==='2 transacciones')?.rate*100)}, 3+ → ${fmtPct(d.por_n_transacciones_trip1.rows.find(r=>r.categoria==='3 o más')?.rate*100)}. Ver gráfico dedicado en "¿Qué segmentos recompran más?".</li>
+    <li><b>Las variables demográficas nuevas (edad, ingreso) mejoraron mucho el modelo</b> — el ROC-AUC del GBM saltó de ${(0.589).toFixed(3)} a <b>${mdl.gbm.metrics.roc_auc.toFixed(3)}</b> al incorporarlas. <b>Pero hay dos matices importantes:</b> (1) Gran parte del poder viene de si el dato está informado o no, no del valor en sí — la categoría "Sin dato" de edad tiene una tasa mucho más baja que cualquier edad real, lo que sugiere que la ausencia del dato (perfiles más nuevos o menos verificados) pesa tanto o más que la edad concreta. (2) <b>Riesgo de contaminación temporal (señalado por Matías):</b> estos campos parecen ser snapshots recalculados por fila, no valores fijos en el tiempo — cambian entre la fila de trip1 y la de trip2 en 60-72% de los casos (incluso birth_year). Existe la posibilidad de que el valor que vemos en la fila de trip1 haya sido <em>actualizado retroactivamente</em> después de trips posteriores, no que refleje el estado real al momento del primer viaje. Si eso ocurre, parte del poder predictivo de estas variables sería espurio. <b>Conclusión: los gradientes demográficos son señal indicativa, no concluyente; el equipo de datos debe confirmar la lógica de generación del snapshot antes de usarlas para segmentación definitiva.</b></li>
+    <li><b>Antigüedad de la cuenta al momento de trip1: relación no lineal (forma de U invertida).</b> Quienes se registraron el mismo día de su primer trip recompran menos (${fmtPct(d.bin_antiguedad_usuario.rows[0]?.rate*100)}); la recompra sube fuerte con algo de antigüedad (31-180 días: ${fmtPct(d.bin_antiguedad_usuario.rows[2]?.rate*100)}, el pico) y baja levemente para cuentas muy viejas (3+ años: ${fmtPct(d.bin_antiguedad_usuario.rows[5]?.rate*100)}). Sugiere que un registro "de una sola vez" (walk-in) es distinto de alguien que ya navegaba la plataforma antes de comprar.</li>
+    <li><b>Customer Service no muestra una asociación clara</b> con la recompra (${fmtPct(d.por_customer_service.rows.find(r=>r.categoria===1)?.rate*100)} con interacción vs ${fmtPct(d.por_customer_service.rows.find(r=>r.categoria===0)?.rate*100)} sin ella, cohortes 2024+), ni tampoco la satisfacción declarada. Dado que no hay timestamp de la interacción, esto es descriptivo únicamente — no se puede afirmar si la interacción fue antes o después de una eventual 2ª transacción.</li>
+    <li><b>El path de medios del 1er trip (cohortes 2021+) muestra el canal Metabuscadores con la menor recompra asociada</b> (${fmtPct(d.por_canal_dominante_path.rows.find(r=>r.categoria==='Metabuscadores')?.rate*100)}) y CRM con la mayor (${fmtPct(d.por_canal_dominante_path.rows.find(r=>r.categoria==='CRM')?.rate*100)}) — consistente con perfiles más price-driven vs. usuarios ya en la base de contactos. El patrón se repite mirando específicamente el primer y el último click del path (first/last touch).</li>
+    <li><b>Los journeys "multi-touch" (primer y último click de canales distintos) recompran más</b> que los de un solo canal de punta a punta (${fmtPct(d.por_first_last_mismo_canal.rows.find(r=>r.categoria==='Canal distinto (multi-touch)')?.rate*100)} vs ${fmtPct(d.por_first_last_mismo_canal.rows.find(r=>r.categoria==='Mismo canal (first=last)')?.rate*100)}) — otra manifestación del patrón "más señales de búsqueda/interacción en trip1 → más recompra" que también se ve en App y en nº de transacciones.</li>
+    <li><b>El modelo multivariado tiene poder predictivo moderado</b> (ROC-AUC ${mdl.gbm.metrics.roc_auc.toFixed(3)} en GBM, evaluado en cohortes ${mdl.poblacion.cutoff_month}+ que el modelo nunca vio en el entrenamiento): en criollo, si tomás al azar un usuario que recompró y uno que no, el modelo acierta cuál es cuál el ${(mdl.gbm.metrics.roc_auc*100).toFixed(0)}% de las veces (0,50 = tirar una moneda, 1,00 = perfecto). Mejoró bastante con las variables nuevas, pero el comportamiento/perfil en el 1er trip por sí solo sigue lejos de "adivinar" quién va a recomprar. Ver la explicación completa y el ranking de drivers en la sección de Modelo.</li>
+  </ol>`;
+  document.getElementById('insights').innerHTML = html;
+}
+
+function buildRecomendaciones() {
+  const d = DATA.descriptive;
+  const items = [
+    {t: 'Testear un programa de engagement post-compra en la App', why: `Dosis-respuesta clara y monótona entre visitas a la App antes de comprar y recompra (${fmtPct(d.por_app_antes.rows.find(r=>r.categoria===0)?.rate*100)} sin uso vs ${fmtPct(d.bin_visitas_app_antes.rows[5]?.rate*100)} con 16+ visitas). Es asociación, no causalidad: quienes ya son más propensos a viajar de nuevo también navegan más.`,
+     action: 'Diseñar un experimento (A/B) de activación de App post-1ª-compra (notificaciones, contenido personalizado) y medir impacto real en recompra, no asumirlo del dato observacional.'},
+    {t: 'Fortalecer el programa de Loyalty como palanca de retención', why: `Los tiers superiores muestran tasas de recompra 2-3x la general, y usar puntos en el 1er trip también se asocia a mayor recompra.`,
+     action: 'Dado el riesgo de causalidad inversa (el tier se gana viajando más), testear si acelerar el acceso a beneficios de tier para clientes nuevos de alto potencial aumenta la recompra incremental.'},
+    {t: 'Revisar la estrategia de adquisición vía Metabuscadores', why: `Es el canal dominante del path con menor recompra asociada entre todos los medios (cohortes 2021+).`,
+     action: 'Curar la calidad de la audiencia adquirida por metabuscadores o complementar con journeys de fidelización específicos para ese origen.'},
+    {t: 'No usar Customer Service ni CRM histórico como palanca de recompra todavía', why: 'No hay temporalidad confiable en CS (sin timestamp de la interacción) y la cobertura de CRM histórico está en revisión.',
+     action: 'Pedir a Data que incorpore timestamp de la interacción de CS y cierre la cobertura de mkt_users_fact_comms antes de construir reglas de negocio sobre estas variables.'},
+    {t: 'Explorar por qué los extremos de gasto del 1er trip recompran más', why: 'La relación gasto-recompra tiene forma de U, no es lineal.',
+     action: 'Segmentar cualitativamente los compradores de trip1 muy barato y muy caro para entender si son perfiles distintos (oportunistas vs. viajeros frecuentes de alto valor) y diseñar journeys diferenciados.'},
+  ];
+  document.getElementById('recomendaciones').innerHTML = items.map((it,i) => `
+    <div style="padding:12px 0; ${i>0?'border-top:1px solid var(--line);':''}">
+      <div style="font-weight:700; font-size:13.5px; margin-bottom:4px;">${i+1}. ${it.t}</div>
+      <div style="font-size:12.5px; color:var(--muted); margin-bottom:5px;"><b style="color:var(--ink);">Por qué:</b> ${it.why}</div>
+      <div style="font-size:12.5px;"><b style="color:var(--accent);">Acción/experimento sugerido:</b> ${it.action}</div>
+    </div>`).join('');
+}
+
+const SEGMENT_OPTIONS = [
+  {key:'por_n_transacciones_trip1', label:'Nº transacciones trip1', labelMap:x=>x},
+  {key:'por_pais', label:'País', labelMap:x=>x},
+  {key:'por_producto', label:'Producto trip1', labelMap:x=>x},
+  {key:'por_plataforma', label:'Plataforma trip1', labelMap:x=>x},
+  {key:'por_canal', label:'Canal trip1', labelMap:x=>x},
+  {key:'por_flight_class', label:'Flight class', labelMap:x=>x},
+  {key:'por_cupon', label:'Uso de cupón', labelMap:x=>x===1?'Con cupón':'Sin cupón'},
+  {key:'por_uso_puntos', label:'Uso de puntos loyalty', labelMap:x=>x===1?'Usó puntos':'No usó puntos'},
+  {key:'por_tarjeta_credito', label:'Pagó con tarjeta de crédito', labelMap:x=>x===1?'Sí':'No'},
+  {key:'por_transferencia', label:'Pagó con transferencia', labelMap:x=>x===1?'Sí':'No'},
+  {key:'por_multi_instrumento', label:'Multi-instrumento de pago', labelMap:x=>x===1?'Sí':(x===0?'No':'Sin datos de pago')},
+  {key:'por_app_antes', label:'Usó App antes de trip1', labelMap:x=>x===1?'Sí':'No'},
+  {key:'por_tiene_vuelo', label:'Trip1 incluyó vuelo', labelMap:x=>x?'Sí':'No'},
+  {key:'por_tipo_viaje', label:'Tipo de viaje (nac/int)', labelMap:x=>x},
+  {key:'por_rango_edad', label:'Rango de edad', labelMap:x=>x},
+  {key:'por_income', label:'Nivel de ingreso', labelMap:x=>x},
+  {key:'por_pais_residencia', label:'País de residencia', labelMap:x=>x},
+  {key:'por_pais_vs_residencia_igual', label:'¿Viajó en su país de residencia?', labelMap:x=>x},
+  {key:'por_bucket_anticipacion', label:'Anticipación de compra', labelMap:x=>x},
+  {key:'por_bucket_duracion', label:'Duración del viaje', labelMap:x=>x},
+];
+
+function buildSegmentExplorer() {
+  const d = DATA.descriptive;
+  const btnWrap = document.getElementById('segBtns');
+  const yearBtns = document.getElementById('yearBtns');
+  let current = SEGMENT_OPTIONS[0];
+  let selectedYear = '';
+  const YEAR_HORIZON_MAP = {'2022': 18, '2023': 18, '2024': 12, '2025': 6};
+  btnWrap.innerHTML = SEGMENT_OPTIONS.map(o => `<button class="seg-btn" data-key="${o.key}">${o.label}</button>`).join('');
+
+  function render(opt) {
+    btnWrap.querySelectorAll('.seg-btn').forEach(b => b.classList.toggle('active', b.dataset.key===opt.key));
+    let dataToRender = d[opt.key];
+    let horizonLabel = d.standard_horizon || 18;
+    let yearNote = '';
+    if (selectedYear && d.por_anio_segments && d.por_anio_segments[selectedYear] && d.por_anio_segments[selectedYear][opt.key]) {
+      dataToRender = d.por_anio_segments[selectedYear][opt.key];
+      horizonLabel = YEAR_HORIZON_MAP[selectedYear] || 18;
+      yearNote = ` | Año ${selectedYear} (horizonte ${horizonLabel}m, cohortes maduras)`;
+    } else if (selectedYear) {
+      yearNote = ` | Año ${selectedYear} — dimensión no disponible por año, mostrando total`;
+    }
+    const baseLabel = (dataToRender && dataToRender.label) || opt.label;
+    document.getElementById('segDesc').textContent = baseLabel + ` — tasa de recompra a ${horizonLabel} meses (mínimo 100 usuarios por segmento)` + yearNote;
+    renderBreakdown('segChart', 'segTableBody', dataToRender, {labelMap: opt.labelMap, minN: 100});
+  }
+
+  btnWrap.querySelectorAll('.seg-btn').forEach(btn => btn.addEventListener('click', () => {
+    const opt = SEGMENT_OPTIONS.find(o=>o.key===btn.dataset.key);
+    if (opt) { current = opt; render(opt); }
+  }));
+
+  if (yearBtns) {
+    yearBtns.querySelectorAll('.seg-btn').forEach(b => b.classList.toggle('active', b.dataset.year === ''));
+    yearBtns.querySelectorAll('.seg-btn').forEach(btn => {
+      btn.onclick = () => {
+        yearBtns.querySelectorAll('.seg-btn').forEach(b => b.classList.toggle('active', b===btn));
+        selectedYear = btn.dataset.year;
+        render(current);
+      };
+    });
+  }
+
+  render(current);
+}
+
+function buildCohortes() {
+  const d = DATA.descriptive;
+  const h = d.standard_horizon || 18;
+  const t = d.cohortes_por_mes_estandar;
+  const rates = t.map(r => (r.n_elig >= 20000) ? PCT(r.n_rebuy, r.n_elig) : null);
+  lineWithBars(document.getElementById('trendChart'), t.map(r=>r.cohort_month), t.map(r=>r.n), rates, {h: 260});
+  document.getElementById('trendLegend').innerHTML =
+    '<span><span class="sw" style="background:var(--panel-2);border:1px solid var(--line)"></span>Usuarios nuevos por mes</span>' +
+    `<span><span class="sw" style="background:var(--accent)"></span>Tasa de recompra a ${h} meses (estándar)</span>`;
+
+  const anios = [...new Set(d.cohortes_por_anio.map(r=>r.cohort_year))];
+  let html = '<table><thead><tr><th>Cohorte (año)</th><th class="num">Usuarios</th><th class="num">Recompra 6m</th><th class="num">12m</th><th class="num">18m (estándar)</th><th class="num">24m</th><th class="num">36m</th></tr></thead><tbody>';
+  anios.forEach(a => {
+    const row = hh => { const r = d.cohortes_por_anio.find(x=>x.cohort_year===a && x.horizon===hh); return r && r.n_elig>1000 ? PCT(r.n_rebuy, r.n_elig) : null; };
+    const n = d.cohortes_por_anio.find(x=>x.cohort_year===a && x.horizon===6)?.n;
+    html += `<tr><td>${a}</td><td class="num">${fmtN(n)}</td><td class="num">${fmtPct(row(6))}</td><td class="num">${fmtPct(row(12))}</td><td class="num"><b>${fmtPct(row(18))}</b></td><td class="num">${fmtPct(row(24))}</td><td class="num">${fmtPct(row(36))}</td></tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('cohortTable').innerHTML = html;
+}
+
+function buildSurvival() {
+  const s = DATA.survival;
+  const fmtDays = d => d>=365 ? (d/365).toFixed(1)+'a' : d+'d';
+  let currentGroup = 'general';
+  const groupSelectors = {
+    general: () => [{name:'General', x:s.general.t, y:s.general.s, color:'var(--accent)'}],
+    por_app: () => Object.entries(s.por_app.curves).map(([k,v],i) => ({name: k==='1'?'Usó App antes':'No usó App', x:v.t, y:v.s, color:COLORS[i%COLORS.length]})),
+    por_pais: () => Object.entries(s.por_pais.curves).map(([k,v],i) => ({name:k, x:v.t, y:v.s, color:COLORS[i%COLORS.length]})),
+    por_producto: () => Object.entries(s.por_producto.curves).map(([k,v],i) => ({name:k, x:v.t, y:v.s, color:COLORS[i%COLORS.length]})),
+    por_plataforma: () => Object.entries(s.por_plataforma.curves).map(([k,v],i) => ({name:k, x:v.t, y:v.s, color:COLORS[i%COLORS.length]})),
+    por_loyalty: () => Object.entries(s.por_loyalty.curves).map(([k,v],i) => ({name: k==='1'?'Usó puntos':'No usó puntos', x:v.t, y:v.s, color:COLORS[i%COLORS.length]})),
+  };
+  function render(group) {
+    const series = groupSelectors[group]();
+    multiLineChart(document.getElementById('survivalChart'), series, {h:300, minY:0, maxY:1, fmtY: v=>(v*100).toFixed(0)+'%', fmtX: fmtDays});
+    document.getElementById('survivalLegend').innerHTML = series.map((s,i)=>`<span><span class="sw" style="background:${s.color}"></span>${s.name}</span>`).join('');
+    const p = s !== 'general' ? DATA.survival[group]?.logrank_p : null;
+    document.getElementById('survivalP').textContent = (group!=='general' && DATA.survival[group].logrank_p!=null)
+      ? `Log-rank test p-value: ${DATA.survival[group].logrank_p < 0.001 ? '<0.001' : DATA.survival[group].logrank_p.toFixed(3)} (diferencias entre curvas ${DATA.survival[group].logrank_p<0.05?'estadísticamente significativas':'no significativas'})`
+      : '';
+  }
+  document.querySelectorAll('#survivalBtns .seg-btn').forEach(btn => btn.addEventListener('click', () => {
+    document.querySelectorAll('#survivalBtns .seg-btn').forEach(b=>b.classList.toggle('active', b===btn));
+    render(btn.dataset.group);
+  }));
+  render('general');
+}
+
+function buildPerfil() {
+  const d = DATA.descriptive;
+  renderBreakdown('tipoViajeChart', null, d.por_tipo_viaje, {minN:0, labelW:110});
+  renderBreakdown('rangoEdadChart', null, d.por_rango_edad, {minN:0, labelW:90,
+    order:['<18','18-24','25-34','35-44','45-54','55-64','65+','Sin dato','Edad invalida']});
+  renderBreakdown('incomeChart', null, d.por_income, {minN:0, labelW:110, order:['Low','Medium','High','Unknown']});
+  renderBreakdown('anticipacionChart', null, d.por_bucket_anticipacion, {minN:0, labelW:110,
+    order:['0-6 dias','7-29 dias','30-59 dias','60-89 dias','90+ dias','Invalido']});
+  renderBreakdown('duracionChart', null, d.por_bucket_duracion, {minN:0, labelW:110,
+    order:['Mismo dia','1-3 dias','4-7 dias','8-14 dias','15+ dias','Invalido']});
+  renderDoseResponse('antiguedadChart', d.bin_antiguedad_usuario);
+  renderBreakdown('paisResidenciaChart', null, d.por_pais_residencia, {minN:0, labelW:150});
+  renderBreakdown('residenciaIgualChart', null, d.por_pais_vs_residencia_igual, {minN:0, labelW:260});
+}
+
+function buildApp() {
+  const d = DATA.descriptive;
+  renderDoseResponse('appDoseChart', d.bin_visitas_app_antes);
+  renderInteractionTable('appXPuntosTable', d.interaccion_app_x_puntos, a=>a===1?'Usó App':'No usó App', b=>b===1?'Usó puntos':'No usó puntos');
+  renderInteractionTable('appXTarjetaTable', d.interaccion_app_x_tarjeta, a=>a===1?'Usó App':'No usó App', b=>b===1?'Tarjeta crédito':'Sin tarjeta');
+  renderInteractionTable('appXCohortTable', d.interaccion_app_x_cohort_year, a=>a===1?'Usó App':'No usó App', b=>b);
+}
+
+function buildLoyalty() {
+  const d = DATA.descriptive;
+  renderBreakdown('loyaltyTierChart', 'loyaltyTierBody', d.por_tier_loyalty, {minN:0});
+  renderBreakdown('loyaltyPuntosChart', 'loyaltyPuntosBody', d.por_uso_puntos, {labelMap:x=>x===1?'Usó puntos':'No usó puntos', minN:0});
+}
+
+function buildPayments() {
+  const d = DATA.descriptive;
+  renderBreakdown('paymentsChart', 'paymentsBody', d.por_multi_instrumento, {labelMap:x=>x===1?'Multi-instrumento':(x===0?'Un solo instrumento':'Sin datos de pago'), minN:0});
+  document.getElementById('paymentsCaveat').textContent =
+    'Un 0 en flags de método de pago puede significar "sin evidencia de ese medio" y no necesariamente "confirmado que no lo usó" — cobertura de Payments ~97.5%.';
+}
+
+function buildCS() {
+  const d = DATA.descriptive;
+  renderBreakdown('csChart', 'csBody', d.por_customer_service, {labelMap:x=>x===1?'Con interacción CS':'Sin interacción CS', minN:0});
+  renderBreakdown('csSatChart', 'csSatBody', d.por_cs_satisfaccion, {minN:0});
+}
+
+function buildPath() {
+  const d = DATA.descriptive;
+  renderBreakdown('pathChart', 'pathBody', d.por_canal_dominante_path, {minN:0, labelW:210});
+  renderBreakdown('firstClickChart', 'firstClickBody', d.por_first_click_canal, {minN:0, labelW:190});
+  renderBreakdown('lastClickChart', 'lastClickBody', d.por_last_click_canal, {minN:0, labelW:190});
+  renderBreakdown('sameChannelChart', 'sameChannelBody', d.por_first_last_mismo_canal, {minN:0, labelW:230});
+}
+
+function buildLegacy() {
+  const d = DATA.legacy;
+  const sb = d.speedBuckets;
+  const order = ["0-7d","8-30d","31-90d","91-180d","181-365d",">365d"];
+  const idx = name => sb.speed_bucket.indexOf(name);
+  verticalBarChart(document.getElementById('speedDistChart'), sb.speed_bucket.map((b,i)=>({label:b, value: sb.n_usuarios[i], valueLabel:fmtN(sb.n_usuarios[i]), color:'var(--accent)'})), {h:220, fmtY:v=>fmtN(v)});
+  const intensity = sb.speed_bucket.map((b,i) => ({label:b, value: sb.avg_visitas[i]/sb.avg_dias[i]*30}));
+  verticalBarChart(document.getElementById('speedIntensityChart'), intensity.map(d=>({label:d.label, value:d.value, valueLabel:d.value.toFixed(1), color:'var(--accent-2)'})), {h:220});
+  const series = [{name:'Directo',key:'ev_directo'},{name:'SEO/SEM/Brand',key:'ev_seo'},{name:'Metabuscadores',key:'ev_meta'},{name:'CRM',key:'ev_crm'},{name:'Otros',key:'ev_otros'}];
+  const totals = sb.speed_bucket.map((b,i) => series.reduce((a,s)=>a+sb[s.key][i],0));
+  const normSeries = series.map(s => ({name:s.name, values: sb[s.key].map((v,i)=> totals[i]?v/totals[i]:0)}));
+  stackedBarChart(document.getElementById('speedMixChart'), sb.speed_bucket, normSeries, {h:220});
+  document.getElementById('speedMixLegend').innerHTML = series.map((s,i)=>`<span><span class="sw" style="background:${COLORS[i%COLORS.length]}"></span>${s.name}</span>`).join('');
+
+  // --- Insights dinámicos ---
+  const i0 = idx("0-7d"), iLast = idx(">365d");
+  const int0 = intensity[i0] ? intensity[i0].value : 0;
+  const intLast = intensity[iLast] ? intensity[iLast].value : 1;
+  const actRatio = Math.round(int0 / Math.max(intLast, 0.1));
+  const nTotal = sb.n_usuarios.reduce((a,b)=>a+b,0);
+  const nSlow = (sb.n_usuarios[idx(">365d")]||0) + (sb.n_usuarios[idx("181-365d")]||0);
+  const pctSlow = Math.round(nSlow/nTotal*100);
+  const nFast = (sb.n_usuarios[idx("0-7d")]||0) + (sb.n_usuarios[idx("8-30d")]||0);
+  const pctFast = Math.round(nFast/nTotal*100);
+
+  const banner = document.getElementById('speedInsightBanner');
+  if (banner) banner.innerHTML = `<b>Lectura de la sección:</b> el <b>${pctSlow}%</b> de los recompradores tarda más de 6 meses en volver — hay una ventana larga para activarlos con CRM. Pero quienes regresan en los primeros días son radicalmente más activos: navegan <b>${actRatio}× más</b> que los tardíos, lo que los hace identificables antes de que compren.`;
+
+  const distInsight = document.getElementById('speedDistInsight');
+  if (distInsight) distInsight.innerHTML = `Solo el <b>${pctFast}%</b> vuelve en el primer mes — la gran mayoría está en la cola larga. Eso significa que hay semanas o meses de ventana para impactar al usuario con comunicaciones antes de que tome la decisión.`;
+
+  const intInsight = document.getElementById('speedIntensityInsight');
+  if (intInsight) intInsight.innerHTML = `Los que recompran en los primeros 7 días llegan con <b>${int0.toFixed(1)} visitas/mes</b>; los que tardan más de un año, solo <b>${intLast.toFixed(1)}</b>. Alta frecuencia de visitas es la señal más clara de que la decisión de compra está cerca.`;
+
+  const crmShares = sb.speed_bucket.map((b,i) => {
+    const t = series.reduce((a,s)=>a+(sb[s.key][i]||0),0);
+    return t ? (sb['ev_crm'][i]||0)/t : 0;
+  });
+  const maxCrmIdx = crmShares.indexOf(Math.max(...crmShares));
+  const maxCrmBucket = sb.speed_bucket[maxCrmIdx] || '—';
+  const mixInsight = document.getElementById('speedMixInsight');
+  if (mixInsight) mixInsight.innerHTML = `El CRM tiene mayor peso relativo en el segmento <b>${maxCrmBucket}</b>. Los recompradores tardíos llegan más por tráfico directo — posiblemente ya tomaron la decisión solos. El <b>timing de activación</b> importa: actuar demasiado tarde pierde la ventana de influencia.`;
+
+  const sp = d.sameProductByCategory;
+  const items = sp.producto_trip1.map((p,i) => ({label:p, n:sp.n_rebuyers[i], pct: PCT(sp.n_mismo_producto[i], sp.n_rebuyers[i])}))
+    .filter(x => x.n >= 2000).sort((a,b)=>b.n-a.n);
+  horizontalBarChart(document.getElementById('loyaltyProductChart'), items.map((x,i)=>({label:`${x.label} (n=${fmtN(x.n)})`, value:x.pct, valueLabel:x.pct.toFixed(0)+'%', color:COLORS[i%COLORS.length]})), {maxV:100, labelW:210});
+
+  function transTable(el, data, k1, k2) {
+    const rows = data[k1].map((a,i) => ({a, b: data[k2][i], n: data.n[i]}));
+    document.getElementById(el).innerHTML = rows.map(r => `<tr><td>${r.a||'—'}</td><td>${r.b||'—'}</td><td class="num">${fmtN(r.n)}</td></tr>`).join('');
+  }
+  transTable('prodTransBody', d.productTransition, 'productos_trip_1', 'productos_trip_2');
+  transTable('canalTransBody', d.canalTransition, 'canal_trip_1', 'canal_trip_2');
+  transTable('platTransBody', d.plataformaTransition, 'plataforma_trip_1', 'plataforma_trip_2');
+  transTable('destinoTransBody', d.destinoTransition, 'destino_trip1', 'destino_trip2');
+
+  const sd = d.sameDestinoByTop;
+  const destItems = sd.destino_trip1.map((dest,i) => ({label:`${dest} (n=${fmtN(sd.n_rebuyers[i])})`, n:sd.n_rebuyers[i], pct: PCT(sd.n_mismo_destino[i], sd.n_rebuyers[i])}))
+    .sort((a,b)=>b.n-a.n);
+  horizontalBarChart(document.getElementById('loyaltyDestinoChart'), destItems.map((x,i)=>({label:x.label, value:x.pct, valueLabel:x.pct.toFixed(0)+'%', color:COLORS[i%COLORS.length]})), {maxV:100, labelW:150});
+
+  const lt = d.lealtadDestinoTemporada;
+  document.getElementById('destinoTemporadaKpis').innerHTML = `
+    <div class="row3">
+      <div class="kpi"><div class="label">Repite el mismo destino</div><div class="value">${(lt.pct_mismo_destino*100).toFixed(1)}%</div><div class="note">De ${fmtN(lt.n_rebuyers)} recompradores</div></div>
+      <div class="kpi"><div class="label">Viaja en el mismo mes</div><div class="value">${(lt.pct_mismo_mes*100).toFixed(1)}%</div><div class="note">Azar puro ≈ 8,3% (1/12) — hay señal real</div></div>
+      <div class="kpi"><div class="label">Viaja en el mismo trimestre</div><div class="value">${(lt.pct_mismo_trimestre*100).toFixed(1)}%</div><div class="note">Azar puro ≈ 25% (1/4) — hay señal real</div></div>
+    </div>`;
+
+  const mm = d.mesViajeMatrix;
+  renderMonthHeatmap('mesViajeHeatmap', mm.mes_trip1, mm.mes_trip2, mm.n);
+}
+
+const MODEL_FEATURE_LABELS = {
+  pais:'País', purchase_type:'Producto', plataforma_principal:'Plataforma', canal_principal:'Canal',
+  flight_class_simple:'Flight class', cohort_year:'Año de cohorte',
+  flg_uso_cupon:'Usó cupón', flg_uso_puntos:'Usó puntos loyalty', flg_tarjeta_credito:'Pagó c/ tarjeta',
+  flg_transferencia:'Pagó c/ transferencia', flg_deposito_bancario:'Pagó c/ depósito', flg_cash:'Pagó cash',
+  flg_multi_instrumento_pago:'Multi-instrumento', flg_multi_tipo_pago:'Multi-tipo de pago',
+  flg_app_90d_antes_trip1:'Usó App antes de trip1', tiene_vuelo:'Incluyó vuelo',
+  log_gross_bookings:'Gasto (log)', visitas_app_90d_antes_trip1:'Visitas App antes', n_transacciones_trip1:'Nº transacciones trip1',
+  tipo_viaje:'Tipo de viaje', rango_edad_primer_trip:'Rango de edad', income:'Nivel de ingreso',
+  bucket_anticipacion_compra:'Anticipación de compra', bucket_duracion_viaje:'Duración del viaje',
+  antiguedad_usuario_dias_al_trip1:'Antigüedad de cuenta',
+};
+function featLabel(f) {
+  for (const k in MODEL_FEATURE_LABELS) if (f===k || f.startsWith(k+'_')) return MODEL_FEATURE_LABELS[k] + (f.includes('_')&&f!==k ? ': '+f.slice(k.length+1) : '');
+  return f;
+}
+
+function aucQualitativeLabel(auc) {
+  if (auc < 0.55) return 'señal casi nula';
+  if (auc < 0.60) return 'señal muy débil';
+  if (auc < 0.70) return 'señal moderada';
+  if (auc < 0.80) return 'señal buena';
+  if (auc < 0.90) return 'señal muy buena';
+  return 'señal excelente (poco común)';
+}
+
+function buildModelo() {
+  const m = DATA.modeling;
+  const aucGbm = m.gbm.metrics.roc_auc, aucLog = m.logistic.metrics.roc_auc;
+  document.getElementById('modeloKpis').innerHTML = `
+    <div class="row4">
+      <div class="kpi"><div class="label">ROC-AUC (GBM)</div><div class="value">${aucGbm.toFixed(3)}</div><div class="note">${aucQualitativeLabel(aucGbm)} · ${fmtN(m.poblacion.n_test)} usuarios</div></div>
+      <div class="kpi"><div class="label">ROC-AUC (Logística)</div><div class="value">${aucLog.toFixed(3)}</div><div class="note">${aucQualitativeLabel(aucLog)} · mismo test set</div></div>
+      <div class="kpi"><div class="label">PR-AUC (GBM)</div><div class="value">${m.gbm.metrics.pr_auc.toFixed(3)}</div><div class="note">vs. ${fmtPct(m.poblacion.base_rate_test*100)} si el modelo no aportara nada</div></div>
+      <div class="kpi"><div class="label">Corte temporal train/test</div><div class="value" style="font-size:16px">${m.poblacion.cutoff_month}</div><div class="note">Train ${fmtN(m.poblacion.n_train)} / Test ${fmtN(m.poblacion.n_test)}</div></div>
+    </div>
+    <div class="intro-panel" style="margin-top:14px; margin-bottom:0;">
+      <h2 style="font-size:13px;">¿Cómo se lee el ROC-AUC?</h2>
+      <p><b>Es la probabilidad de que el modelo ordene bien a un par de usuarios elegidos al azar</b>: uno que efectivamente recompró y uno que no. Concretamente, con ROC-AUC = ${aucGbm.toFixed(3)}: si agarrás
+      al azar un usuario que recompró y uno que no, el modelo le puso un puntaje más alto al que sí recompró en el <b>${(aucGbm*100).toFixed(0)}% de los casos</b>.</p>
+      <ul class="glossary" style="grid-template-columns:1fr; margin-top:4px;">
+        <li style="margin-bottom:4px;"><b>0,50</b> = acierta ese orden la mitad de las veces → el modelo no aporta nada, es tirar una moneda.</li>
+        <li style="margin-bottom:4px;"><b>1,00</b> = siempre ordena bien → predicción perfecta (no existe en la práctica).</li>
+        <li style="margin-bottom:4px;"><b>Nuestro resultado (${aucGbm.toFixed(3)})</b> = ${aucQualitativeLabel(aucGbm)}. Hay señal real (está por encima de 0,50), pero el comportamiento en el 1er trip por sí solo está lejos de "adivinar" quién va a recomprar.</li>
+      </ul>
+      <p style="margin-bottom:0;">Escala orientativa para comparar (no es una regla exacta, cambia según el problema): 0,50-0,60 señal muy débil · 0,60-0,70 moderada · 0,70-0,80 buena · 0,80-0,90 muy buena · 0,90+ excelente. Predecir una decisión humana futura (si alguien va a viajar de nuevo) con datos de un solo momento (el 1er trip) es un problema difícil — la mayoría de lo que decide eso (plata, planes, si le gustó el viaje, ofertas de la competencia) no está en esta tabla. Por eso un AUC moderado no invalida el análisis: el <b>ranking de drivers</b> (odds ratios / importancia) sigue siendo información útil sobre qué está asociado a más o menos recompra, aunque el modelo en conjunto no sea muy preciso prediciendo el resultado exacto de cada usuario.</p>
+    </div>`;
+
+  const dec = m.gbm.metrics.decile_table.slice().sort((a,b)=>b.decile-a.decile);
+  verticalBarChart(document.getElementById('liftChart'), dec.map((r,i)=>({label:'D'+(10-i), value:r.rate*100, valueLabel:(r.rate*100).toFixed(1)+'%', color: i===0?'var(--accent)':'var(--panel-2)'})), {h:230});
+
+  const calib = m.gbm.metrics.calibration;
+  multiLineChart(document.getElementById('calibChart'), [
+    {name:'Observado', x:calib.map(c=>c.avg_pred), y:calib.map(c=>c.obs_rate), color:'var(--accent)'},
+  ], {h:240, diagonal:true, fmtX:v=>(v*100).toFixed(0)+'%', fmtY:v=>(v*100).toFixed(0)+'%'});
+
+  const orRows = m.logistic.table.filter(r => !r.feature.startsWith('cohort_year')).sort((a,b)=>b.or-a.or).slice(0,18);
+  document.getElementById('orTableBody').innerHTML = orRows.map(r => {
+    const sig = r.p_value < 0.05;
+    const cls = !sig ? 'na' : (r.or>1 ? 'ok' : 'warn');
+    return `<tr><td>${featLabel(r.feature)}</td><td class="num">${r.or.toFixed(2)}</td><td class="num">${r.or_low.toFixed(2)}–${r.or_high.toFixed(2)}</td><td class="num"><span class="pill ${cls}">${sig?'p<0.05':'n.s.'}</span></td></tr>`;
+  }).join('');
+
+  const permImp = m.gbm.permutation_importance.slice(0, 14);
+  horizontalBarChart(document.getElementById('shapChart'),
+    permImp.map((r,i)=>({label:featLabel(r.feature), value:r.importance, valueLabel:r.importance.toFixed(3), color:COLORS[i%COLORS.length]})),
+    {maxV: Math.max(...permImp.map(r=>r.importance))*1.15, labelW:200});
+
+  const pdp = m.gbm.partial_dependence.visitas_app_90d_antes_trip1;
+  if (pdp) {
+    multiLineChart(document.getElementById('pdpChart'), [{name:'P(recompra 18m)', x:pdp.grid, y:pdp.avg_pred, color:'var(--accent)'}], {h:220, fmtY:v=>(v*100).toFixed(0)+'%'});
+  }
+}
+
+async function init() {
+  const res = await fetch('rebuy_data_v2.json?v=' + Date.now());
+  DATA = await res.json();
+  const d = DATA.descriptive;
+  document.getElementById('subtitle').textContent =
+    `Generado ${DATA.generatedAt.replace('T',' ')} · ${fmtN(d.kpis_generales.n_total)} usuarios de primer trip (2022–2026, excluye pandemia) · Fuente: tmp.rebuy_final`;
+
+  document.getElementById('app').innerHTML = `
+    <div class="tab-page" id="tabpage-hallazgos">
+    <section class="kpis" id="kpis"></section>
+
+    <section class="panel" id="universoPanel" style="margin-bottom:14px;">
+      <div class="panel-head">
+        <h2>¿Sobre qué base se calcula cada % de recompra?</h2>
+        <span class="desc">Cada horizonte tiene un universo diferente — las barras muestran de dónde sale el denominador</span>
+      </div>
+      <div class="panel-body" id="universoBody"></div>
+    </section>
+
+    <section class="intro-panel" style="border-left:4px solid var(--accent); padding-left:20px; margin-bottom:10px;">
+      <h2 style="color:var(--accent); margin-bottom:10px;">¿Qué es un usuario "elegible"?</h2>
+      <p style="margin-bottom:10px; font-size:13.5px; line-height:1.6;">
+        <b>Elegible = su primer trip fue hace suficientes meses como para poder medir si recompró en esa ventana.</b>
+      </p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px;">
+        <div style="background:var(--panel-2);border-radius:6px;padding:12px;border:1px solid var(--line);">
+          <div style="font-weight:700;font-size:12px;color:var(--good);margin-bottom:4px;">✓ ELEGIBLE para 6M</div>
+          <div style="font-size:12.5px;line-height:1.5;">Usuario cuyo 1er trip fue <b>hace 8 meses</b>.<br>Ya pasaron ≥6 meses → podemos saber si recompró en los primeros 6 o no.</div>
+        </div>
+        <div style="background:var(--panel-2);border-radius:6px;padding:12px;border:1px solid var(--line);">
+          <div style="font-weight:700;font-size:12px;color:var(--bad);margin-bottom:4px;">✗ NO elegible para 6M</div>
+          <div style="font-size:12.5px;line-height:1.5;">Usuario cuyo 1er trip fue <b>hace 4 meses</b>.<br>Todavía no terminaron los 6 meses → no sabemos si va a recomprar o no.</div>
+        </div>
+      </div>
+      <p style="margin:0;font-size:12px;color:var(--muted);line-height:1.5;">
+        Por eso a medida que sube el horizonte (6M → 12M → 36M), la base de elegibles se achica: hay menos usuarios con tanta antigüedad desde su 1er trip.
+      </p>
+    </section>
+
+    <section class="intro-panel">
+      <h2>¿Qué es este dashboard y cómo leerlo?</h2>
+      <p>Analiza qué características y comportamientos del <b>primer trip</b> (y, con cuidado, de los días posteriores) se
+      asocian con que un usuario haga una <b>segunda transacción</b>. Todo lo que ves es <b>asociación / correlación / señal observada</b>,
+      no causalidad — salvo que se indique explícitamente lo contrario con un experimento. Ver la solapa "Detalle y datos" → Limitaciones. Solo incluye cohortes desde 2022 (pandemia excluida).</p>
+      <dl class="glossary">
+        <dt>Elegible a Nm</dt><dd>Usuario cuyo 1er trip ocurrió hace <b>al menos N meses</b>. Solo estos entran en el denominador del % de recompra a Nm — evita sesgo de censura (no contar a alguien a quien "aún le queda tiempo" para recomprar).</dd>
+        <dt>Recompra a Nm</dt><dd>% que realizó una segunda transacción dentro de N meses de su 1er trip, calculado <b>solo sobre usuarios elegibles a ese horizonte</b>. Fórmula: <code style="background:var(--panel-2);padding:1px 4px;border-radius:3px;">recompraron ÷ elegibles</code>.</dd>
+        <dt>Grupo A / B / C de variables</dt><dd>Clasificación por riesgo de leakage: A = seguras (disponibles al momento de trip1), B = post-trip1 con ventana controlada, C = dependen del propio evento de recompra (nunca usadas para predecir).</dd>
+        <dt>Out-of-time</dt><dd>El modelo se entrena con cohortes viejas y se evalúa en cohortes más nuevas que nunca vio — evita optimismo por fuga temporal.</dd>
+      </dl>
+    </section>
+
+    <section class="panel" id="hallazgos">
+      <div class="panel-head"><h2>Hallazgos clave</h2><span class="desc">Síntesis — asociaciones observadas, no causalidad</span></div>
+      <div class="panel-body"><div id="insights"></div></div>
+    </section>
+
+    <section class="panel" id="recomendaciones">
+      <div class="panel-head"><h2>¿Qué se puede hacer desde Marketing?</h2><span class="desc">Hipótesis accionables y experimentos sugeridos</span></div>
+      <div class="panel-body"><div id="recomendaciones"></div></div>
+    </section>
+    </div>
+
+    <div class="tab-page" id="tabpage-ejecutivo">
+    <section class="kpis" id="execKpis"></section>
+    <div class="row2" style="margin-bottom:18px;">
+      <section class="panel" style="margin-bottom:0;">
+        <div class="panel-head"><h2>Evolución de la tasa de recompra</h2><span class="desc">Tasa a 18m por cohorte mensual (2022–2026)</span></div>
+        <div class="panel-body"><div id="execTrendChart"></div></div>
+      </section>
+      <section class="panel" style="margin-bottom:0;">
+        <div class="panel-head"><h2>Top drivers de recompra</h2><span class="desc">Importancia de variables en el modelo — solo correlación, no causalidad</span></div>
+        <div class="panel-body"><div id="execDriversChart"></div></div>
+      </section>
+    </div>
+    <section class="panel">
+      <div class="panel-head"><h2>Hallazgos clave para dirección</h2><span class="desc">Síntesis ejecutiva — asociaciones observadas, no causalidad. Cohortes 2022–2026.</span></div>
+      <div class="panel-body"><div id="execInsights"></div></div>
+    </section>
+    <section class="panel">
+      <div class="panel-head"><h2>Oportunidades accionables</h2><span class="desc">Hipótesis que requieren validación experimental antes de escalar</span></div>
+      <div class="panel-body"><div id="execAcciones"></div></div>
+    </section>
+    </div>
+
+    <div class="tab-page active" id="tabpage-detalle">
+    <section class="panel" id="calidad">
+      <div class="panel-head"><h2>Calidad de datos y metodología</h2><span class="desc">Auditoría del universo, granularidad y cobertura de tmp.rebuy_final</span></div>
+      <div class="panel-body" id="calidadBody"></div>
+    </section>
+
+    <section class="panel" id="segmentos">
+      <div class="panel-head"><h2>¿Qué segmentos recompran más?</h2><span class="desc">Tasa de recompra por dimensión — filtrable por año de cohorte y tipo de producto</span></div>
+      <div class="panel-body">
+        <div class="controls">
+          <label>Año de primer trip:</label>
+          <div class="seg-btns" id="yearBtns">
+            <button class="seg-btn active" data-year="">Todos 2022–2026</button>
+            <button class="seg-btn" data-year="2022">2022</button>
+            <button class="seg-btn" data-year="2023">2023</button>
+            <button class="seg-btn" data-year="2024">2024</button>
+            <button class="seg-btn" data-year="2025">2025</button>
+          </div>
+        </div>
+        <div class="controls"><div class="seg-btns" id="segBtns"></div></div>
+        <p class="chart-caption" id="segDesc"></p>
+        <div class="row2">
+          <div id="segChart"></div>
+          <div style="max-height:380px;overflow:auto;"><table><thead><tr><th>Segmento</th><th class="num">Usuarios</th><th class="num">Recompras 18m</th><th class="num">Tasa</th></tr></thead><tbody id="segTableBody"></tbody></table></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="cohortes">
+      <div class="panel-head"><h2>Evolución por cohortes</h2><span class="desc">Volumen mensual y tasa de recompra a 18 meses (estándar); comparación 6/12/18/24/36m por año</span></div>
+      <div class="panel-body">
+        <div id="trendChart"></div><div class="legend" id="trendLegend"></div>
+        <div style="margin-top:16px;" id="cohortTable"></div>
+      </div>
+    </section>
+
+    <section class="panel" id="cohortesPaisPuntos">
+      <div class="panel-head"><h2>Cohortes por país y uso de puntos</h2><span class="desc">Tasa de recompra a 18m segmentada por año de cohorte, país y si usó puntos de loyalty — pedido de Matías</span></div>
+      <div class="panel-body">
+        <div class="controls">
+          <label>País:</label>
+          <select id="cpPaisSelect"><option value="">Todos</option></select>
+          <label style="margin-left:12px;">Uso de puntos:</label>
+          <div class="seg-btns" id="cpPuntosBtns">
+            <button class="seg-btn active" data-puntos="">Todos</button>
+            <button class="seg-btn" data-puntos="Con puntos">Con puntos</button>
+            <button class="seg-btn" data-puntos="Sin puntos">Sin puntos</button>
+          </div>
+        </div>
+        <div id="cpChart" style="margin-top:12px;"></div>
+        <div style="max-height:380px;overflow:auto;margin-top:12px;"><table><thead><tr><th>Año</th><th>País</th><th>Uso puntos</th><th class="num">Usuarios</th><th class="num">Elegibles 18m</th><th class="num">Recompras 18m</th><th class="num">Tasa</th></tr></thead><tbody id="cpTableBody"></tbody></table></div>
+      </div>
+    </section>
+
+    <section class="panel" id="explorador">
+      <div class="panel-head">
+        <h2>Explorador de segmentos</h2>
+        <span class="desc">Seleccioná características del primer trip y ve la tasa de recompra de ese grupo</span>
+      </div>
+      <div class="panel-body">
+        <!-- Filtros: 3 columnas fijas -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px;">
+
+          <!-- Grupo 1: Período y origen -->
+          <div style="border:1px solid var(--line);border-radius:8px;padding:14px 16px;">
+            <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--accent);margin-bottom:12px;">Período y origen</div>
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <div>
+                <div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-bottom:5px;">Año del primer trip</div>
+                <div class="seg-btns" id="expl-year">
+                  <button class="seg-btn active" data-val="">Todos</button>
+                  <button class="seg-btn" data-val="2022">2022</button>
+                  <button class="seg-btn" data-val="2023">2023</button>
+                  <button class="seg-btn" data-val="2024">2024</button>
+                  <button class="seg-btn" data-val="2025">2025</button>
+                  <button class="seg-btn" data-val="2026">2026</button>
+                </div>
+              </div>
+              <div>
+                <div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-bottom:5px;">Mes del primer trip</div>
+                <select id="expl-month" style="width:100%;">
+                  <option value="">Todos</option>
+                  <option value="1">Enero</option><option value="2">Febrero</option>
+                  <option value="3">Marzo</option><option value="4">Abril</option>
+                  <option value="5">Mayo</option><option value="6">Junio</option>
+                  <option value="7">Julio</option><option value="8">Agosto</option>
+                  <option value="9">Septiembre</option><option value="10">Octubre</option>
+                  <option value="11">Noviembre</option><option value="12">Diciembre</option>
+                </select>
+              </div>
+              <div>
+                <div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-bottom:5px;">Destino primer trip</div>
+                <select id="expl-destino-t1" style="width:100%;"><option value="">Todos</option></select>
+              </div>
+              <div>
+                <div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-bottom:5px;">País</div>
+                <select id="expl-pais" style="width:100%;"><option value="">Todos</option></select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Grupo 2: Primer trip -->
+          <div style="border:1px solid var(--line);border-radius:8px;padding:14px 16px;">
+            <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--accent);margin-bottom:12px;">Primer trip (T1)</div>
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <div>
+                <div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-bottom:5px;">Producto</div>
+                <select id="expl-producto" style="width:100%;"><option value="">Todos</option></select>
+              </div>
+              <div>
+                <div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-bottom:5px;">Tipo de viaje</div>
+                <select id="expl-tipoviaje" style="width:100%;"><option value="">Todos</option></select>
+              </div>
+              <div>
+                <div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-bottom:5px;">Canal de compra</div>
+                <select id="expl-canal" style="width:100%;"><option value="">Todos</option></select>
+              </div>
+              <div>
+                <div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-bottom:5px;">Plataforma</div>
+                <select id="expl-plataforma" style="width:100%;"><option value="">Todos</option></select>
+              </div>
+              <div>
+                <div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-bottom:5px;">Cantidad de transacciones</div>
+                <div class="seg-btns" id="expl-ntrx">
+                  <button class="seg-btn active" data-val="">Todas</button>
+                  <button class="seg-btn" data-val="1">1</button>
+                  <button class="seg-btn" data-val="2">2</button>
+                  <button class="seg-btn" data-val="3+">3+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Grupo 3: Perfil y recompra -->
+          <div style="border:1px solid var(--line);border-radius:8px;padding:14px 16px;">
+            <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--accent);margin-bottom:12px;">Perfil del usuario</div>
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <div>
+                <div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-bottom:5px;">App <span style="font-weight:400;">(en los 90 días previos al T1)</span></div>
+                <div class="seg-btns" id="expl-app">
+                  <button class="seg-btn active" data-val="">Todos</button>
+                  <button class="seg-btn" data-val="1">Con App</button>
+                  <button class="seg-btn" data-val="0">Sin App</button>
+                </div>
+              </div>
+              <div>
+                <div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-bottom:5px;">Loyalty <span style="font-weight:400;">(usó puntos en el T1)</span></div>
+                <div class="seg-btns" id="expl-puntos">
+                  <button class="seg-btn active" data-val="">Todos</button>
+                  <button class="seg-btn" data-val="1">Con puntos</button>
+                  <button class="seg-btn" data-val="0">Sin puntos</button>
+                </div>
+              </div>
+              <div style="border-top:1px solid var(--line);padding-top:12px;">
+                <div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-bottom:5px;">¿Hizo un 2do trip?</div>
+                <div class="seg-btns" id="expl-rebuy">
+                  <button class="seg-btn active" data-val="">Todos</button>
+                  <button class="seg-btn" data-val="1">Sí, recompró</button>
+                  <button class="seg-btn" data-val="0">No, un solo trip</button>
+                </div>
+              </div>
+              <div>
+                <div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-bottom:5px;">Producto del 2do trip</div>
+                <select id="expl-producto-t2" style="width:100%;"><option value="">Todos</option></select>
+              </div>
+              <div>
+                <div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-bottom:5px;">Destino del 2do trip</div>
+                <select id="expl-destino-t2" style="width:100%;"><option value="">Todos</option></select>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Segmento activo -->
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:8px 14px;margin-bottom:16px;">
+          <span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);flex-shrink:0;">Segmento activo:</span>
+          <div id="explFilterDesc" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;min-height:24px;"></div>
+          <button class="toggle-btn" id="explResetBtn" style="font-size:11px;padding:4px 12px;flex-shrink:0;">Limpiar filtros</button>
+        </div>
+
+        <!-- Resultado: tasa héroe + KPIs secundarios -->
+        <div style="display:flex;gap:12px;align-items:stretch;margin-bottom:20px;">
+          <div id="explHero" style="background:var(--panel-2);border:2px solid var(--accent);border-radius:10px;padding:18px 24px;text-align:center;display:flex;flex-direction:column;justify-content:center;min-width:170px;flex-shrink:0;">
+            <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px;">Tasa de recompra</div>
+            <div id="explRateVal" style="font-size:42px;font-weight:900;line-height:1;color:var(--accent);">—</div>
+            <div id="explRateNote" style="font-size:10.5px;color:var(--muted);margin-top:8px;line-height:1.4;">—</div>
+          </div>
+          <div class="kpis" style="grid-template-columns:repeat(3,1fr);flex:1;margin:0;" id="explKpis"></div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px;align-items:start;">
+          <div>
+            <b style="font-size:12.5px;">Tasa de recompra por año de cohorte</b>
+            <div id="explYearChart" style="margin-top:8px;"></div>
+          </div>
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+              <b style="font-size:12.5px;">Desglosar por:</b>
+              <select id="explBreakdownDim">
+                <option value="pais">País</option>
+                <option value="destino_t1">Destino 1er trip</option>
+                <option value="destino_t2">Destino 2do trip</option>
+                <option value="producto_t1">Prod. trip 1</option>
+                <option value="producto_t2">Prod. trip 2</option>
+                <option value="plataforma">Plataforma</option>
+                <option value="canal">Canal</option>
+                <option value="flg_app">App</option>
+                <option value="flg_puntos">Puntos</option>
+                <option value="n_trx">Trx trip1</option>
+                <option value="tipo_viaje">Tipo viaje</option>
+              </select>
+            </div>
+            <div style="max-height:340px;overflow:auto;">
+              <table><thead><tr>
+                <th id="explBreakdownHeader">Segmento</th>
+                <th class="num">Usuarios</th>
+                <th class="num">Tasa</th>
+                <th class="num">vs. global</th>
+              </tr></thead><tbody id="explBreakdownBody"></tbody></table>
+            </div>
+          </div>
+        </div>
+        <div class="caveat" style="margin-top:12px;">Horizon automático: se muestra la tasa al horizonte disponible según el año de cohorte (2022-2023→18m; 2024→12m; 2025→6m). Filas con &lt;30 usuarios se excluyen del cubo (filtro pre-aplicado en pipeline). La tasa "vs. global" compara contra la misma selección sin el filtro de esa dimensión.</div>
+
+        <div style="border-top:1px solid var(--line);margin-top:20px;padding-top:16px;" id="explRecomendaciones">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+            <b style="font-size:13px;">Recomendaciones para este segmento</b>
+            <span style="font-size:11px;color:var(--muted);">Palancas priorizadas por importancia en el modelo × brecha vs. global</span>
+          </div>
+          <div id="explRecCards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;"></div>
+          <div class="caveat" style="margin-top:10px;">Basado en correlaciones del modelo, no en efectos causales estimados. Usá estos accionables como hipótesis de campaña a validar con A/B test.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="survival">
+      <div class="panel-head"><h2>Tiempo hasta la 2ª transacción (supervivencia)</h2><span class="desc">Curvas de Kaplan-Meier, censuradas administrativamente a 36 meses</span></div>
+      <div class="panel-body">
+        <div class="controls"><div class="seg-btns" id="survivalBtns">
+          <button class="seg-btn active" data-group="general">General</button>
+          <button class="seg-btn" data-group="por_app">Por App</button>
+          <button class="seg-btn" data-group="por_pais">Por país</button>
+          <button class="seg-btn" data-group="por_producto">Por producto</button>
+          <button class="seg-btn" data-group="por_plataforma">Por plataforma</button>
+          <button class="seg-btn" data-group="por_loyalty">Por loyalty</button>
+        </div></div>
+        <div id="survivalChart"></div>
+        <div class="legend" id="survivalLegend"></div>
+        <p class="chart-caption" id="survivalP"></p>
+        <div class="caveat">Curva de supervivencia = % que <b>todavía no recompró</b> a los N días. Cae rápido al principio porque muchos recompradores lo hacen en los primeros meses. Censura administrativa a 36 meses: no se puede observar (por diseño del pipeline) ningún evento más allá de esa ventana.</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>¿Cuándo y cómo regresan los recompradores?</h2><span class="desc">Solo entre quienes efectivamente hicieron una 2ª compra</span></div>
+      <div class="panel-body">
+
+        <div style="background:#f9f9f9;border:1px solid #e5e5e5;border-radius:8px;padding:13px 16px;margin-bottom:14px;font-size:13px;line-height:1.7;color:#444;">
+          <b style="color:#222;display:block;margin-bottom:3px;">Contexto</b>
+          Entre el primer y el segundo viaje existe una <b>ventana de planificación</b>: el usuario vuelve al sitio, explora destinos y compara precios antes de comprar de nuevo.
+          Estos tres gráficos describen esa ventana — cuánto dura, qué tan activo está el usuario durante ella, y por qué canal entra —
+          para entender en qué momento y por dónde conviene activarlo con CRM <em>antes</em> de que tome la decisión solo.
+        </div>
+
+        <div id="speedInsightBanner" style="background:#e8f4fd;border-left:4px solid var(--accent);border-radius:6px;padding:10px 16px;margin-bottom:18px;font-size:13px;line-height:1.6;color:#1a3a4a;"></div>
+
+        <div class="row3">
+          <div>
+            <b style="font-size:12.5px">¿Cuánto tardaron en volver?</b>
+            <div style="font-size:11px;color:#777;margin:2px 0 6px">Cantidad de recompradores según los días transcurridos entre la 1ª y la 2ª compra</div>
+            <div id="speedDistChart"></div>
+            <div id="speedDistInsight" style="font-size:11.5px;color:#444;margin-top:8px;line-height:1.5;padding:7px 10px;background:#f5f5f5;border-radius:5px;"></div>
+          </div>
+          <div>
+            <b style="font-size:12.5px">¿Qué tan activos fueron mientras esperaban?</b>
+            <div style="font-size:11px;color:#777;margin:2px 0 6px">Promedio de visitas/mes al sitio durante el intervalo entre compras — señal de intención</div>
+            <div id="speedIntensityChart"></div>
+            <div id="speedIntensityInsight" style="font-size:11.5px;color:#444;margin-top:8px;line-height:1.5;padding:7px 10px;background:#f5f5f5;border-radius:5px;"></div>
+          </div>
+          <div>
+            <b style="font-size:12.5px">¿Por qué canal volvían al sitio?</b>
+            <div style="font-size:11px;color:#777;margin:2px 0 6px">Mix de canales de entrada mientras el usuario planificaba su regreso</div>
+            <div id="speedMixChart"></div>
+            <div class="legend" id="speedMixLegend"></div>
+            <div id="speedMixInsight" style="font-size:11.5px;color:#444;margin-top:8px;line-height:1.5;padding:7px 10px;background:#f5f5f5;border-radius:5px;"></div>
+          </div>
+        </div>
+
+        <div class="caveat">⚠️ Visitas y canal entre viajes solo se conocen <em>después</em> de que ocurrió la recompra — no se usan en el modelo predictivo (sería leakage). Se muestran aquí únicamente como descripción del comportamiento de quienes ya recompraron.</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Lealtad y cambio de producto/canal/plataforma</h2></div>
+      <div class="panel-body">
+        <div class="row2">
+          <div><b style="font-size:12.5px">% que repite la misma categoría de producto</b><div id="loyaltyProductChart"></div></div>
+          <div><b style="font-size:12px">Top combinaciones de producto (trip1 → trip2)</b><table><thead><tr><th>Trip1</th><th>Trip2</th><th class="num">Usuarios</th></tr></thead><tbody id="prodTransBody"></tbody></table></div>
+        </div>
+        <div class="row2" style="margin-top:16px;">
+          <div><b style="font-size:12px">Canal (trip1 → trip2)</b><table><thead><tr><th>Trip1</th><th>Trip2</th><th class="num">Usuarios</th></tr></thead><tbody id="canalTransBody"></tbody></table></div>
+          <div><b style="font-size:12px">Plataforma (trip1 → trip2)</b><table><thead><tr><th>Trip1</th><th>Trip2</th><th class="num">Usuarios</th></tr></thead><tbody id="platTransBody"></tbody></table></div>
+        </div>
+        <div style="margin-top:20px; border-top:1px solid var(--line); padding-top:16px;">
+          <b style="font-size:13px;">Destino y temporada del viaje</b>
+          <p class="chart-caption">A pedido de María Sol — misma pregunta de lealtad pero mirando a dónde y cuándo viaja la gente, no solo qué producto compra.</p>
+          <div id="destinoTemporadaKpis" style="margin-top:10px;"></div>
+          <div class="row2" style="margin-top:16px;">
+            <div><b style="font-size:12px">% que repite el mismo destino (top destinos de trip1)</b><div id="loyaltyDestinoChart"></div></div>
+            <div><b style="font-size:12px">Top combinaciones de destino (trip1 → trip2)</b><table><thead><tr><th>Trip1</th><th>Trip2</th><th class="num">Usuarios</th></tr></thead><tbody id="destinoTransBody"></tbody></table></div>
+          </div>
+          <div style="margin-top:16px;">
+            <b style="font-size:12px">Mes de VIAJE (check-in, no fecha de transacción): trip1 → trip2</b>
+            <p class="chart-caption">Cada celda es el % del trip2 que cae en ese mes, dado el mes de viaje del trip1 (fila = 100%). Es por <b>fecha de viaje real</b>, no fecha de reserva, y agrupa el mes independientemente del año — así se ve el patrón estacional cruzando años (ej. alguien que viajó en enero 2023 y vuelve a viajar en enero 2025 cuenta como "mismo mes"). Los meses más "pegajosos" son enero (17%), diciembre (15,6%) y julio (15,1%) — temporada alta y vacaciones de invierno en Sudamérica.</p>
+            <div id="mesViajeHeatmap" style="overflow-x:auto;"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="perfil">
+      <div class="panel-head"><h2>Perfil demográfico y características del viaje</h2><span class="desc">Variables incorporadas 2026-09-21 — ver caveat de temporalidad abajo</span></div>
+      <div class="panel-body">
+        <div class="row3">
+          <div><b style="font-size:12.5px">Tipo de viaje</b><div id="tipoViajeChart"></div></div>
+          <div><b style="font-size:12.5px">Rango de edad</b><div id="rangoEdadChart"></div></div>
+          <div><b style="font-size:12.5px">Nivel de ingreso estimado</b><div id="incomeChart"></div></div>
+        </div>
+        <div class="row3" style="margin-top:16px;">
+          <div><b style="font-size:12.5px">Anticipación de compra</b><div id="anticipacionChart"></div></div>
+          <div><b style="font-size:12.5px">Duración del viaje</b><div id="duracionChart"></div></div>
+          <div><b style="font-size:12.5px">Antigüedad de cuenta al momento de trip1</b><div id="antiguedadChart"></div></div>
+        </div>
+        <div class="row2" style="margin-top:16px;">
+          <div><b style="font-size:12.5px">País de residencia (top)</b><div id="paisResidenciaChart"></div></div>
+          <div><b style="font-size:12.5px">¿Viajó dentro de su país de residencia?</b><div id="residenciaIgualChart"></div></div>
+        </div>
+        <div class="caveat"><b>Advertencia metodologica (señalada por Matías):</b> income/birth_year/nationality/antigüedad cambian entre la fila de trip1 y la de trip2 en 60-72% de los casos — incluso birth_year, que no debería cambiar. Esto sugiere que son snapshots recalculados por fila, no valores fijos en el tiempo. Existe la posibilidad de que el valor en la fila de trip1 haya sido <b>actualizado retroactivamente</b> por trips posteriores, y no refleje el estado real del usuario al momento de su primer viaje. Si eso ocurre, parte del poder predictivo de estas variables sería espurio. Se usa siempre el valor de trip1 para evitar leakage directo, pero <b>la lógica de generación del snapshot debe confirmarse con el equipo de datos antes de usar estas variables para segmentación definitiva</b>.</div>
+      </div>
+    </section>
+
+    <section class="panel" id="app">
+      <div class="panel-head"><h2>Comportamiento en App</h2><span class="desc">Uso de App en los 90 días antes de trip1 (Grupo A, leak-free)</span></div>
+      <div class="panel-body">
+        <b style="font-size:12.5px">Dosis-respuesta: visitas App antes de trip1 vs recompra 18m</b>
+        <div id="appDoseChart"></div>
+        <div class="row3" style="margin-top:16px;">
+          <div><b style="font-size:12px">App × Uso de puntos</b><div id="appXPuntosTable"></div></div>
+          <div><b style="font-size:12px">App × Tarjeta de crédito</b><div id="appXTarjetaTable"></div></div>
+          <div><b style="font-size:12px">App × Año de cohorte (control temporal)</b><div id="appXCohortTable" style="max-height:220px;overflow:auto;"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="loyalty">
+      <div class="panel-head"><h2>Loyalty</h2><span class="desc">Tier y uso de puntos en trip1</span></div>
+      <div class="panel-body">
+        <div class="row2">
+          <div><b style="font-size:12.5px">Por tier al momento de redención</b><div id="loyaltyTierChart"></div></div>
+          <div><b style="font-size:12.5px">Por uso de puntos</b><div id="loyaltyPuntosChart"></div></div>
+        </div>
+        <div class="caveat">Riesgo de causalidad inversa: el tier se gana viajando/gastando más. Ver Hallazgos clave.</div>
+      </div>
+    </section>
+
+    <section class="panel" id="payments">
+      <div class="panel-head"><h2>Payments</h2><span class="desc">Métodos de pago de trip1</span></div>
+      <div class="panel-body"><div id="paymentsChart"></div><p class="chart-caption" id="paymentsCaveat"></p></div>
+    </section>
+
+    <section class="panel" id="cs">
+      <div class="panel-head"><h2>Customer Service</h2><span class="desc">Solo cohortes 2024+ — sin timestamp de la interacción, descriptivo únicamente</span></div>
+      <div class="panel-body">
+        <div class="row2">
+          <div><b style="font-size:12.5px">Con vs sin interacción CS en trip1</b><div id="csChart"></div></div>
+          <div><b style="font-size:12.5px">Por satisfacción declarada (solo con interacción)</b><div id="csSatChart"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="path">
+      <div class="panel-head"><h2>Path de medios de trip1</h2><span class="desc">Solo cohortes 2021+ (0% cobertura antes)</span></div>
+      <div class="panel-body">
+        <b style="font-size:12.5px">Canal dominante del path completo</b>
+        <div id="pathChart"></div>
+        <div class="row2" style="margin-top:18px;">
+          <div><b style="font-size:12.5px">Canal del primer click (first-touch)</b><div id="firstClickChart"></div></div>
+          <div><b style="font-size:12.5px">Canal del último click antes de comprar (last-touch)</b><div id="lastClickChart"></div></div>
+        </div>
+        <div style="margin-top:18px;">
+          <b style="font-size:12.5px">¿El primer y el último click fueron del mismo canal?</b>
+          <div id="sameChannelChart"></div>
+          <p class="chart-caption">Usuarios cuyo primer y último touchpoint fueron canales distintos (journey multi-touch) muestran más recompra que quienes tuvieron el mismo canal de punta a punta — consistente con el patrón general de "más señales de engagement en trip1 → más recompra" (ver también nº de transacciones y visitas de App).</p>
+        </div>
+        <div class="caveat">first_click / last_click representan el primer y último click <b>dentro del path de atribución de esa transacción</b> (modelo de atribución interno), no necesariamente la primera o última interacción histórica del usuario con Despegar. Mismo problema de cobertura que eventos_*: no se usan como feature del modelo por el mismo riesgo de confusión con año de cohorte (0% de cobertura en 2019-2020).</div>
+      </div>
+    </section>
+
+    <section class="panel" id="modelo">
+      <div class="panel-head"><h2>Modelo multivariado y ranking de drivers</h2><span class="desc">Regresión logística + Gradient Boosting, evaluados out-of-time — solo features Grupo A</span></div>
+      <div class="panel-body">
+        <div id="modeloKpis"></div>
+        <div class="row2" style="margin-top:16px;">
+          <div><b style="font-size:12.5px">Lift por decil de score (GBM, test set)</b><div id="liftChart"></div></div>
+          <div><b style="font-size:12.5px">Calibración (predicho vs observado)</b><div id="calibChart"></div></div>
+        </div>
+        <div class="row2" style="margin-top:16px;">
+          <div>
+            <b style="font-size:12.5px">Odds ratios — regresión logística (IC95% por bootstrap)</b>
+            <table><thead><tr><th>Variable</th><th class="num">OR</th><th class="num">IC95%</th><th class="num">Signif.</th></tr></thead><tbody id="orTableBody"></tbody></table>
+          </div>
+          <div><b style="font-size:12.5px">Importancia por permutación (GBM)</b><div id="shapChart"></div></div>
+        </div>
+        <div style="margin-top:16px;">
+          <b style="font-size:12.5px">Partial dependence: visitas App antes de trip1 → P(recompra 18m)</b>
+          <div id="pdpChart"></div>
+        </div>
+        <div class="caveat">OR &gt; 1 con IC95% que no cruza 1 = asociación positiva robusta dentro del modelo (controlando por las demás variables). El poder predictivo global es moderado (ver ROC-AUC): el comportamiento en trip1 ayuda pero está lejos de determinar la recompra.</div>
+      </div>
+    </section>
+
+    <section class="panel" id="limitaciones">
+      <div class="panel-head"><h2>Limitaciones y variables no utilizables</h2></div>
+      <div class="panel-body">
+        <ul class="insight-list">
+          <li><b>Nunca se usaron como features predictivas</b> (Grupo C, leakage directo): cantidad_visitas/searches_entre_trips, flg_app_entre_trips, plataforma/canal/productos de trip2, flg_mismo_producto_trip_1_2.</li>
+          <li><b>flg_app_90d_post_trip1 está contaminada</b> para el 31.5% de los recompradores (recompraron antes de los 90 días) — no se usó en el modelo principal.</li>
+          <li><b>Customer Service</b> no tiene timestamp de la interacción en el export: se trata como descriptivo, nunca como predictor, y solo se mira en cohortes 2024+ por su cobertura.</li>
+          <li><b>CRM histórico</b> (envíos/opens/clicks) no está incorporado — cobertura de mkt_users_fact_comms en revisión según la documentación del pipeline. eventos_crm es solo el path de atribución de la compra, no el historial de comunicaciones.</li>
+          <li><b>Margin/NPV</b> 100% NULL en 2019 — excluido de comparaciones que incluyan esa cohorte.</li>
+          <li><b>Path de medios / first-last click</b> con 0% de cobertura en 2019-2020 — todos los cortes por canal de atribución se restringen a 2021+.</li>
+          <li><b>~3.427 usuarios (0.03%)</b> perdieron su fila de trip1 por errores de parseo de CSV (campos con comas sin escapar, ej. nombres de banco) — se excluyeron de todos los cortes descriptivos y del modelo.</li>
+        </ul>
+      </div>
+    </section>
+    </div>
+  `;
+
+  buildKpis();
+  buildCalidad();
+  buildInsights();
+  buildRecomendaciones();
+  buildSegmentExplorer();
+  buildCohortes();
+  buildCohortesPaisPuntos();
+  buildExploradorCohortes();
+  buildSurvival();
+  buildLegacy();
+  buildPerfil();
+  buildApp();
+  buildLoyalty();
+  buildPayments();
+  buildCS();
+  buildPath();
+  buildModelo();
+  buildEjecutivo();
+}
+
+document.getElementById('darkToggle').addEventListener('click', () => {
+  document.body.classList.toggle('dark');
+  if (DATA) {
+    buildSegmentExplorer(); buildCohortes(); buildCohortesPaisPuntos(); buildExploradorCohortes(); buildSurvival(); buildLegacy(); buildPerfil();
+    buildApp(); buildLoyalty(); buildPayments(); buildCS(); buildPath(); buildModelo(); buildEjecutivo();
+  }
+});
+
+init().catch(err => { document.getElementById('app').innerHTML = '<div class="loading">Error cargando datos: '+err.message+'</div>'; console.error(err); });
+
+document.querySelectorAll('nav.maintabs button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('nav.maintabs button').forEach(b => b.classList.toggle('active', b===btn));
+    document.querySelectorAll('.tab-page').forEach(p => p.classList.toggle('active', p.id === 'tabpage-' + btn.dataset.tab));
+    const toc = document.getElementById('detalleToc');
+    if (toc) toc.style.display = btn.dataset.tab === 'detalle' ? 'flex' : 'none';
+    window.scrollTo({top:0, behavior:'instant'});
+    // Los graficos SVG se dimensionan segun clientWidth del contenedor en el momento de
+    // dibujarse; si esa solapa estaba oculta (display:none) el ancho medido era 0 y quedaban
+    // con tamanos raros. Al volver a mostrar "detalle" los re-dibujamos con el ancho real.
+    if (btn.dataset.tab === 'detalle' && DATA) {
+      buildSegmentExplorer(); buildCohortes(); buildCohortesPaisPuntos(); buildExploradorCohortes(); buildSurvival(); buildLegacy(); buildPerfil();
+      buildApp(); buildLoyalty(); buildPayments(); buildCS(); buildPath(); buildModelo();
+    }
+    if (btn.dataset.tab === 'ejecutivo' && DATA) { buildEjecutivo(); }
+  });
+});
+</script>
+</body>
+</html>

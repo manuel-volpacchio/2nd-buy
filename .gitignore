@@ -1,0 +1,8 @@
+historico/
+Outputs/
+Inputs/
+modeling_view_sample_100k.csv
+_build2.log
+*.parquet
+__pycache__/
+*.pyc

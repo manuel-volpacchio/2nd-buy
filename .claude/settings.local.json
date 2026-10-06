@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import json; d=json.load\\(open\\('rebuy_data_v2.json'\\)\\); print\\(json.dumps\\(d['descriptive']['kpis_por_horizonte'], indent=2\\)\\)\")",
+      "Bash(python -c ' *)"
+    ]
+  }
+}
